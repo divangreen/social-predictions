@@ -1,0 +1,7 @@
+[STRICT CONTEXT RULES]
+
+1. You are an isolated component developer. DO NOT read the entire project workspace.
+2. Rely strictly on explicit file passes. Read ONLY the target file and its direct type definitions.
+3. NEVER run global workspace searches.
+4. When writing Supabase code, look only at `src/types/index.ts` for data structures.
+5. Ignore `.next/`, `.firebase/`, `node_modules/`, and `public/`.
