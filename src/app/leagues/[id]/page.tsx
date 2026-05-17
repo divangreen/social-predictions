@@ -28,32 +28,31 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
   if (!user) redirect('/login')
 
   const [{ data: league }, { data: members }] = await Promise.all([
-    supabase.from('leagues').select('*, tournaments(name, sport)').eq('id', id).single(),
-    supabase.from('league_members').select('user_id, users(id, username, avatar_url, total_points)').eq('league_id', id),
+    supabase.from('leagues').select('id, name, invite_code, tournament_id').eq('id', id).single(),
+    supabase.from('league_members').select('user_id').eq('league_id', id),
   ])
 
   if (!league) notFound()
 
-  const tournamentId = league.tournament_id
-  const tournamentName = (league.tournaments as { name: string; sport: string } | null)?.name
-
-  // Fetch fixtures for this tournament + all predictions for those members
   const memberIds = (members ?? []).map(m => m.user_id)
-  const fixtureIds: string[] = []
+  const tournamentId = league.tournament_id
 
-  const [{ data: tournamentFixtures }, { data: predictions }] = await Promise.all([
-    supabase.from('fixtures').select('id').eq('tournament_id', tournamentId),
-    memberIds.length
-      ? supabase.from('predictions')
-          .select('user_id, points_earned, is_perfect, fixture_id')
-          .in('user_id', memberIds)
-      : Promise.resolve({ data: [] }),
-  ])
+  const [{ data: tournament }, { data: memberUsers }, { data: tournamentFixtures }, { data: predictions }] =
+    await Promise.all([
+      supabase.from('tournaments').select('name').eq('id', tournamentId).single(),
+      memberIds.length
+        ? supabase.from('users').select('id, username, avatar_url').in('id', memberIds)
+        : Promise.resolve({ data: [] }),
+      supabase.from('fixtures').select('id').eq('tournament_id', tournamentId),
+      memberIds.length
+        ? supabase.from('predictions')
+            .select('user_id, points_earned, is_perfect, fixture_id')
+            .in('user_id', memberIds)
+        : Promise.resolve({ data: [] }),
+    ])
 
-  tournamentFixtures?.forEach(f => fixtureIds.push(f.id))
-  const fixtureSet = new Set(fixtureIds)
+  const fixtureSet = new Set((tournamentFixtures ?? []).map(f => f.id))
 
-  // Aggregate per user
   type LeaderboardEntry = {
     userId: string
     username: string
@@ -74,12 +73,14 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       statsMap.set(p.user_id, s)
     })
 
-  const leaderboard: LeaderboardEntry[] = (members ?? [])
-    .map(m => {
-      const u = m.users as { id: string; username: string; avatar_url: string | null } | null
-      const stats = statsMap.get(m.user_id) ?? { points: 0, made: 0, perfect: 0 }
+  const userMap = new Map((memberUsers ?? []).map(u => [u.id, u]))
+
+  const leaderboard: LeaderboardEntry[] = memberIds
+    .map(uid => {
+      const u = userMap.get(uid)
+      const stats = statsMap.get(uid) ?? { points: 0, made: 0, perfect: 0 }
       return {
-        userId: m.user_id,
+        userId: uid,
         username: u?.username ?? 'Unknown',
         avatarUrl: u?.avatar_url ?? null,
         points: stats.points,
@@ -96,16 +97,14 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
     <main className="min-h-screen bg-black px-4 py-8">
       <div className="mx-auto max-w-lg">
 
-        {/* Header */}
         <div className="mb-6">
           <Link href="/tournaments" className="mb-3 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
             ← Tournaments
           </Link>
           <h1 className="text-2xl font-black tracking-tight text-white">{league.name}</h1>
-          {tournamentName && <p className="text-sm text-zinc-500">{tournamentName}</p>}
+          {tournament?.name && <p className="text-sm text-zinc-500">{tournament.name}</p>}
         </div>
 
-        {/* Invite banner */}
         <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Invite your mates</p>
           <p className="mb-3 break-all text-sm font-medium text-white">{inviteUrl}</p>
@@ -120,7 +119,6 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        {/* Leaderboard */}
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Leaderboard</h2>
         <div className="space-y-2">
           {leaderboard.map((entry, i) => {
@@ -161,4 +159,3 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
     </main>
   )
 }
-

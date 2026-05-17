@@ -22,13 +22,24 @@ export default async function TournamentsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: tournaments }, { data: myLeagues }] = await Promise.all([
+  // Fetch tournaments + user's league memberships separately
+  const [{ data: tournaments }, { data: leagueMemberships }] = await Promise.all([
     supabase.from('tournaments').select('*').order('status', { ascending: true }),
-    supabase
-      .from('league_members')
-      .select('leagues(id, name, tournament_id, tournaments(name))')
-      .eq('user_id', user.id),
+    supabase.from('league_members').select('league_id').eq('user_id', user.id),
   ])
+
+  const leagueIds = (leagueMemberships ?? []).map(m => m.league_id)
+
+  const { data: myLeagues } = leagueIds.length
+    ? await supabase.from('leagues').select('id, name, tournament_id').in('id', leagueIds)
+    : { data: [] }
+
+  // Build tournament name map for league display
+  const tournamentIds = [...new Set((myLeagues ?? []).map(l => l.tournament_id))]
+  const { data: leagueTournaments } = tournamentIds.length
+    ? await supabase.from('tournaments').select('id, name').in('id', tournamentIds)
+    : { data: [] }
+  const tournamentNameMap = new Map((leagueTournaments ?? []).map(t => [t.id, t.name]))
 
   return (
     <main className="min-h-screen bg-black px-4 py-8">
@@ -76,28 +87,24 @@ export default async function TournamentsPage() {
             })}
           </div>
         )}
-        {/* My Leagues */}
+
         {(myLeagues?.length ?? 0) > 0 && (
           <div className="mt-8">
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">My leagues</h2>
             <div className="space-y-2">
-              {myLeagues!.map(m => {
-                const league = m.leagues as { id: string; name: string; tournament_id: string; tournaments: { name: string } | null } | null
-                if (!league) return null
-                return (
-                  <Link
-                    key={league.id}
-                    href={`/leagues/${league.id}`}
-                    className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-3.5 transition hover:border-zinc-600"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-white">{league.name}</p>
-                      <p className="text-xs text-zinc-500">{league.tournaments?.name}</p>
-                    </div>
-                    <span className="text-zinc-500">→</span>
-                  </Link>
-                )
-              })}
+              {myLeagues!.map(league => (
+                <Link
+                  key={league.id}
+                  href={`/leagues/${league.id}`}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-3.5 transition hover:border-zinc-600"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-white">{league.name}</p>
+                    <p className="text-xs text-zinc-500">{tournamentNameMap.get(league.tournament_id)}</p>
+                  </div>
+                  <span className="text-zinc-500">→</span>
+                </Link>
+              ))}
             </div>
           </div>
         )}
