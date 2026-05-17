@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import type { Fixture } from '@/types/database'
 
 export async function savePrediction(
   fixtureId: string,
@@ -18,6 +19,7 @@ export async function savePrediction(
     .from('fixtures')
     .select('*')
     .eq('id', fixtureId)
+    .overrideTypes<Fixture>()
     .single()
 
   if (!fixture) return { error: 'Fixture not found' }
