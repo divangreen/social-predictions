@@ -75,12 +75,62 @@ export interface LeagueWithMembers extends League {
 export interface Database {
   public: {
     Tables: {
-      tournaments: { Row: Tournament; Insert: Omit<Tournament, 'status'> & { status?: TournamentStatus | null }; Update: Partial<Tournament> }
-      fixtures: { Row: Fixture; Insert: Omit<Fixture, 'id' | 'is_underdog_home' | 'is_underdog_away' | 'status' | 'home_score' | 'away_score'> & { id?: string; is_underdog_home?: boolean | null; is_underdog_away?: boolean | null; status?: FixtureStatus | null; home_score?: number | null; away_score?: number | null }; Update: Partial<Fixture> }
-      predictions: { Row: Prediction; Insert: Omit<Prediction, 'id' | 'status' | 'points_earned' | 'is_perfect' | 'created_at'> & { id?: string; status?: PredictionStatus | null; points_earned?: number | null; is_perfect?: boolean | null; created_at?: string }; Update: Partial<Prediction> }
-      leagues: { Row: League; Insert: Omit<League, 'id' | 'created_at'> & { id?: string; created_at?: string }; Update: Partial<League> }
-      league_members: { Row: LeagueMember; Insert: Omit<LeagueMember, 'joined_at'> & { joined_at?: string }; Update: Partial<LeagueMember> }
-      users: { Row: User; Insert: Omit<User, 'is_guest' | 'total_points' | 'accuracy_percentage' | 'created_at'> & { is_guest?: boolean | null; total_points?: number | null; accuracy_percentage?: number | null; created_at?: string }; Update: Partial<User> }
+      tournaments: {
+        Row: Tournament
+        Insert: Omit<Tournament, 'status'> & { status?: TournamentStatus | null }
+        Update: Partial<Tournament>
+        Relationships: []
+      }
+      fixtures: {
+        Row: Fixture
+        Insert: Omit<Fixture, 'id' | 'is_underdog_home' | 'is_underdog_away' | 'status' | 'home_score' | 'away_score'> & {
+          id?: string
+          is_underdog_home?: boolean | null
+          is_underdog_away?: boolean | null
+          status?: FixtureStatus | null
+          home_score?: number | null
+          away_score?: number | null
+        }
+        Update: Partial<Fixture>
+        Relationships: []
+      }
+      predictions: {
+        Row: Prediction
+        Insert: Omit<Prediction, 'id' | 'status' | 'points_earned' | 'is_perfect' | 'created_at'> & {
+          id?: string
+          status?: PredictionStatus | null
+          points_earned?: number | null
+          is_perfect?: boolean | null
+          created_at?: string
+        }
+        Update: Partial<Prediction>
+        Relationships: []
+      }
+      leagues: {
+        Row: League
+        Insert: Omit<League, 'id' | 'created_at'> & { id?: string; created_at?: string }
+        Update: Partial<League>
+        Relationships: []
+      }
+      league_members: {
+        Row: LeagueMember
+        Insert: Omit<LeagueMember, 'joined_at'> & { joined_at?: string }
+        Update: Partial<LeagueMember>
+        Relationships: []
+      }
+      users: {
+        Row: User
+        Insert: Omit<User, 'is_guest' | 'total_points' | 'accuracy_percentage' | 'created_at'> & {
+          is_guest?: boolean | null
+          total_points?: number | null
+          accuracy_percentage?: number | null
+          created_at?: string
+        }
+        Update: Partial<User>
+        Relationships: []
+      }
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
   }
 }

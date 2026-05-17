@@ -16,7 +16,7 @@ export async function savePrediction(
   // Verify fixture is still open
   const { data: fixture } = await supabase
     .from('fixtures')
-    .select('kickoff_time, status')
+    .select('*')
     .eq('id', fixtureId)
     .single()
 
