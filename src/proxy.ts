@@ -27,14 +27,24 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Redirect unauthenticated users away from protected routes
-  const isProtectedRoute = !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
+  const path = request.nextUrl.pathname
+  const isPublicRoute = path.startsWith('/login') || path.startsWith('/auth') || path === '/'
 
-  if (!user && isProtectedRoute && request.nextUrl.pathname !== '/') {
+  // Redirect unauthenticated users to login
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // Redirect non-admins away from /admin
+  if (path.startsWith('/admin')) {
+    const adminIds = (process.env.ADMIN_USER_IDS ?? '').split(',').map(s => s.trim()).filter(Boolean)
+    if (!user || !adminIds.includes(user.id)) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
