@@ -1,0 +1,16 @@
+name: Sync Sports Data
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger sync
+        run: |
+          curl -sf "${{ secrets.NEXT_PUBLIC_SITE_URL }}/api/sync/all?secret=${{ secrets.SYNC_SECRET }}" \
+            -o response.json
+          cat response.json
