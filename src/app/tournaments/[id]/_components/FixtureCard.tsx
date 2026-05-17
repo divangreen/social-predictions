@@ -4,6 +4,30 @@ import { useState } from 'react'
 import { savePrediction } from '../actions'
 import type { Fixture, Prediction } from '@/types/database'
 
+async function shareResult(fixture: Fixture, pred: Prediction, onCopied: () => void) {
+  const actual = `${fixture.home_score}–${fixture.away_score}`
+  const myPick = `${pred.predicted_home_score}–${pred.predicted_away_score}`
+  const pts = pred.points_earned ?? 0
+  const lines = [
+    `⚽ ${fixture.home_team_name} ${actual} ${fixture.away_team_name}`,
+    pred.is_perfect
+      ? `🎯 I predicted the exact score — ${myPick}!`
+      : pts > 0
+        ? `✅ I called the result (picked ${myPick})`
+        : `My pick was ${myPick}`,
+    `+${pts} pts on predictr`,
+  ]
+  const text = lines.join('\n')
+  try {
+    if (navigator.share) {
+      await navigator.share({ text })
+    } else {
+      await navigator.clipboard.writeText(text)
+      onCopied()
+    }
+  } catch { /* user cancelled or browser denied */ }
+}
+
 interface Props {
   fixture: Fixture
   tournamentId: string
@@ -28,8 +52,8 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
   const [away, setAway] = useState(existing?.predicted_away_score ?? 0)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle')
 
-  // Always dirty for new predictions (allows saving 0–0); dirty when scores changed for existing ones
   const isDirty = existing === null ||
     home !== existing.predicted_home_score ||
     away !== existing.predicted_away_score
@@ -46,20 +70,31 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
     }
   }
 
+  function handleShare() {
+    if (!existing) return
+    shareResult(fixture, existing, () => {
+      setShareStatus('copied')
+      setTimeout(() => setShareStatus('idle'), 2000)
+    })
+  }
+
   const kickoff = new Date(fixture.kickoff_time)
   const kickoffLabel = kickoff.toLocaleDateString('en-GB', {
     weekday: 'short', day: 'numeric', month: 'short',
   }) + ' · ' + kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
+  const isScored = fixture.status === 'completed' && fixture.home_score != null && existing?.points_earned != null
+  const pts = existing?.points_earned ?? 0
+
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+    <div className={`rounded-2xl border bg-zinc-900 p-4 ${isScored && pts > 0 ? 'border-green-500/30' : 'border-zinc-800'}`}>
       {/* Stage + kickoff */}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">{fixture.stage}</span>
         <span className="text-xs text-zinc-500">{kickoffLabel}</span>
       </div>
 
-      {/* Teams + score picker */}
+      {/* Teams + score area */}
       <div className="flex items-center justify-between gap-2">
 
         {/* Home team */}
@@ -73,7 +108,7 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
           )}
         </div>
 
-        {/* Score picker */}
+        {/* Score */}
         {locked ? (
           <div className="flex flex-col items-center gap-1">
             {fixture.status === 'completed' && fixture.home_score != null ? (
@@ -87,7 +122,7 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
             )}
             {existing && (
               <span className="text-xs text-zinc-500">
-                Your pick: {existing.predicted_home_score}–{existing.predicted_away_score}
+                My pick: {existing.predicted_home_score}–{existing.predicted_away_score}
               </span>
             )}
           </div>
@@ -134,10 +169,29 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
 
       </div>
 
-      {/* Points earned if scored */}
-      {existing?.points_earned != null && existing.points_earned > 0 && (
-        <div className="mt-3 text-center text-xs font-semibold text-green-400">
-          +{existing.points_earned} pts {existing.is_perfect && '🎯 Perfect score!'}
+      {/* Result + share — the "I called it" moment */}
+      {isScored && existing && (
+        <div className={`mt-3 rounded-xl px-3 py-2 ${pts > 0 ? 'bg-green-500/10' : 'bg-zinc-800'}`}>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              {existing.is_perfect ? (
+                <p className="text-sm font-bold text-green-400">🎯 Perfect score!</p>
+              ) : pts > 0 ? (
+                <p className="text-sm font-bold text-green-400">✅ Correct result</p>
+              ) : (
+                <p className="text-sm font-bold text-zinc-500">✗ Missed</p>
+              )}
+              <p className="text-xs text-zinc-500">
+                +{pts} pts · picked {existing.predicted_home_score}–{existing.predicted_away_score}
+              </p>
+            </div>
+            <button
+              onClick={handleShare}
+              className="shrink-0 rounded-full border border-zinc-700 px-3 py-1 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-white active:scale-95"
+            >
+              {shareStatus === 'copied' ? '✓ Copied' : 'Share'}
+            </button>
+          </div>
         </div>
       )}
     </div>
