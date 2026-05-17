@@ -22,16 +22,29 @@ export default async function TournamentsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: tournaments } = await supabase
-    .from('tournaments')
-    .select('*')
-    .order('status', { ascending: true })
+  const [{ data: tournaments }, { data: myLeagues }] = await Promise.all([
+    supabase.from('tournaments').select('*').order('status', { ascending: true }),
+    supabase
+      .from('league_members')
+      .select('leagues(id, name, tournament_id, tournaments(name))')
+      .eq('user_id', user.id),
+  ])
 
   return (
     <main className="min-h-screen bg-black px-4 py-8">
       <div className="mx-auto max-w-lg">
-        <h1 className="mb-1 text-3xl font-black tracking-tight text-white">predictr</h1>
-        <p className="mb-8 text-sm text-zinc-500">Pick your scores. Beat your mates.</p>
+        <div className="mb-8 flex items-end justify-between">
+          <div>
+            <h1 className="mb-1 text-3xl font-black tracking-tight text-white">predictr</h1>
+            <p className="text-sm text-zinc-500">Pick your scores. Beat your mates.</p>
+          </div>
+          <Link
+            href="/leagues/new"
+            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
+          >
+            + League
+          </Link>
+        </div>
 
         {!tournaments?.length ? (
           <div className="rounded-2xl border border-zinc-800 p-8 text-center">
@@ -63,6 +76,32 @@ export default async function TournamentsPage() {
             })}
           </div>
         )}
+        {/* My Leagues */}
+        {(myLeagues?.length ?? 0) > 0 && (
+          <div className="mt-8">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">My leagues</h2>
+            <div className="space-y-2">
+              {myLeagues!.map(m => {
+                const league = m.leagues as { id: string; name: string; tournament_id: string; tournaments: { name: string } | null } | null
+                if (!league) return null
+                return (
+                  <Link
+                    key={league.id}
+                    href={`/leagues/${league.id}`}
+                    className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-3.5 transition hover:border-zinc-600"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-white">{league.name}</p>
+                      <p className="text-xs text-zinc-500">{league.tournaments?.name}</p>
+                    </div>
+                    <span className="text-zinc-500">→</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
     </main>
   )
