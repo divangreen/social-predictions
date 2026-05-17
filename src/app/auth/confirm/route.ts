@@ -4,15 +4,15 @@ import type { EmailOtpType } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
+  const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
   const next = searchParams.get('next') ?? '/'
 
-  if (!token_hash || !type) {
+  if (!code && (!token_hash || !type)) {
     return NextResponse.redirect(new URL('/login?error=missing_token', request.url))
   }
 
-  // Create the redirect response first so we can attach cookies to it
   const response = NextResponse.redirect(new URL(next, request.url))
 
   const supabase = createServerClient(
@@ -30,11 +30,21 @@ export async function GET(request: NextRequest) {
     }
   )
 
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+  let authError: string | null = null
 
-  if (error) {
+  if (code) {
+    // PKCE flow — newer Supabase projects
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) authError = error.message
+  } else if (token_hash && type) {
+    // OTP flow — older format
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+    if (error) authError = error.message
+  }
+
+  if (authError) {
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url)
+      new URL(`/login?error=${encodeURIComponent(authError)}`, request.url)
     )
   }
 
