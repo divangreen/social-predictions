@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/sync?league_id=4328&season=2024-2025",
+      "path": "/api/sync/all",
       "schedule": "0 */6 * * *"
     }
   ]
