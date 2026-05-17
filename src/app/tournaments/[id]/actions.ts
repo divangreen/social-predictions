@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import type { Fixture } from '@/types/database'
 
 export async function savePrediction(
   fixtureId: string,
@@ -15,12 +14,11 @@ export async function savePrediction(
   if (!user) return { error: 'Not authenticated' }
 
   // Verify fixture is still open
-  const fixtureResult = await supabase
+  const { data: fixture } = await supabase
     .from('fixtures')
     .select('*')
     .eq('id', fixtureId)
     .single()
-  const fixture = fixtureResult.data as Fixture | null
 
   if (!fixture) return { error: 'Fixture not found' }
   if (fixture.status !== 'scheduled' || new Date(fixture.kickoff_time) <= new Date()) {

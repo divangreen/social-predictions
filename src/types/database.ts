@@ -2,6 +2,7 @@ export type TournamentStatus = 'upcoming' | 'active' | 'completed'
 export type FixtureStatus = 'scheduled' | 'live' | 'completed'
 export type PredictionStatus = 'pending' | 'scored' | 'void'
 
+// Application-level interfaces (used throughout the app)
 export interface Tournament {
   id: string
   name: string
@@ -63,7 +64,6 @@ export interface User {
   created_at: string
 }
 
-// Joined types for common queries
 export interface PredictionWithFixture extends Prediction {
   fixture: Fixture
 }
@@ -72,65 +72,197 @@ export interface LeagueWithMembers extends League {
   league_members: (LeagueMember & { user: User })[]
 }
 
-export interface Database {
+// Supabase Database type — inline format matching Supabase CLI output.
+// Complex Omit<>&{} intersections fail the GenericSchema extends check;
+// explicit inline types are guaranteed to satisfy Record<string, unknown>.
+export type Database = {
   public: {
     Tables: {
       tournaments: {
-        Row: Tournament
-        Insert: Omit<Tournament, 'status'> & { status?: TournamentStatus | null }
-        Update: Partial<Tournament>
+        Row: {
+          id: string
+          name: string
+          sport: string
+          status: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          sport: string
+          status?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          sport?: string
+          status?: string | null
+        }
         Relationships: []
       }
       fixtures: {
-        Row: Fixture
-        Insert: Omit<Fixture, 'id' | 'is_underdog_home' | 'is_underdog_away' | 'status' | 'home_score' | 'away_score'> & {
+        Row: {
+          id: string
+          tournament_id: string
+          home_team_name: string
+          home_team_logo: string | null
+          away_team_name: string
+          away_team_logo: string | null
+          is_underdog_home: boolean | null
+          is_underdog_away: boolean | null
+          kickoff_time: string
+          status: string | null
+          home_score: number | null
+          away_score: number | null
+          stage: string
+        }
+        Insert: {
           id?: string
+          tournament_id: string
+          home_team_name: string
+          home_team_logo?: string | null
+          away_team_name: string
+          away_team_logo?: string | null
           is_underdog_home?: boolean | null
           is_underdog_away?: boolean | null
-          status?: FixtureStatus | null
+          kickoff_time: string
+          status?: string | null
           home_score?: number | null
           away_score?: number | null
+          stage: string
         }
-        Update: Partial<Fixture>
+        Update: {
+          id?: string
+          tournament_id?: string
+          home_team_name?: string
+          home_team_logo?: string | null
+          away_team_name?: string
+          away_team_logo?: string | null
+          is_underdog_home?: boolean | null
+          is_underdog_away?: boolean | null
+          kickoff_time?: string
+          status?: string | null
+          home_score?: number | null
+          away_score?: number | null
+          stage?: string
+        }
         Relationships: []
       }
       predictions: {
-        Row: Prediction
-        Insert: Omit<Prediction, 'id' | 'status' | 'points_earned' | 'is_perfect' | 'created_at'> & {
+        Row: {
+          id: string
+          user_id: string
+          fixture_id: string
+          predicted_home_score: number
+          predicted_away_score: number
+          status: string | null
+          points_earned: number | null
+          is_perfect: boolean | null
+          created_at: string
+        }
+        Insert: {
           id?: string
-          status?: PredictionStatus | null
+          user_id: string
+          fixture_id: string
+          predicted_home_score: number
+          predicted_away_score: number
+          status?: string | null
           points_earned?: number | null
           is_perfect?: boolean | null
           created_at?: string
         }
-        Update: Partial<Prediction>
+        Update: {
+          id?: string
+          user_id?: string
+          fixture_id?: string
+          predicted_home_score?: number
+          predicted_away_score?: number
+          status?: string | null
+          points_earned?: number | null
+          is_perfect?: boolean | null
+          created_at?: string
+        }
         Relationships: []
       }
       leagues: {
-        Row: League
-        Insert: Omit<League, 'id' | 'created_at'> & { id?: string; created_at?: string }
-        Update: Partial<League>
+        Row: {
+          id: string
+          name: string
+          invite_code: string
+          created_by: string | null
+          tournament_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          invite_code: string
+          created_by?: string | null
+          tournament_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          invite_code?: string
+          created_by?: string | null
+          tournament_id?: string
+          created_at?: string
+        }
         Relationships: []
       }
       league_members: {
-        Row: LeagueMember
-        Insert: Omit<LeagueMember, 'joined_at'> & { joined_at?: string }
-        Update: Partial<LeagueMember>
+        Row: {
+          league_id: string
+          user_id: string
+          joined_at: string
+        }
+        Insert: {
+          league_id: string
+          user_id: string
+          joined_at?: string
+        }
+        Update: {
+          league_id?: string
+          user_id?: string
+          joined_at?: string
+        }
         Relationships: []
       }
       users: {
-        Row: User
-        Insert: Omit<User, 'is_guest' | 'total_points' | 'accuracy_percentage' | 'created_at'> & {
+        Row: {
+          id: string
+          username: string
+          avatar_url: string | null
+          favorite_team_id: string | null
+          is_guest: boolean | null
+          total_points: number | null
+          accuracy_percentage: number | null
+          created_at: string
+        }
+        Insert: {
+          id: string
+          username: string
+          avatar_url?: string | null
+          favorite_team_id?: string | null
           is_guest?: boolean | null
           total_points?: number | null
           accuracy_percentage?: number | null
           created_at?: string
         }
-        Update: Partial<User>
+        Update: {
+          id?: string
+          username?: string
+          avatar_url?: string | null
+          favorite_team_id?: string | null
+          is_guest?: boolean | null
+          total_points?: number | null
+          accuracy_percentage?: number | null
+          created_at?: string
+        }
         Relationships: []
       }
     }
-    Views: Record<string, never>
-    Functions: Record<string, never>
+    Views: { [_ in never]: never }
+    Functions: { [_ in never]: never }
   }
 }
