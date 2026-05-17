@@ -19,8 +19,8 @@ export async function savePrediction(
     .from('fixtures')
     .select('*')
     .eq('id', fixtureId)
-    .overrideTypes<Fixture>()
     .single()
+    .overrideTypes<Fixture>()
 
   if (!fixture) return { error: 'Fixture not found' }
   if (fixture.status !== 'scheduled' || new Date(fixture.kickoff_time) <= new Date()) {
