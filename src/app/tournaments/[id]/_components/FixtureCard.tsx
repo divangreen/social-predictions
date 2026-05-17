@@ -29,8 +29,10 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
-  const isDirty = home !== (existing?.predicted_home_score ?? 0) ||
-    away !== (existing?.predicted_away_score ?? 0)
+  // Always dirty for new predictions (allows saving 0–0); dirty when scores changed for existing ones
+  const isDirty = existing === null ||
+    home !== existing.predicted_home_score ||
+    away !== existing.predicted_away_score
 
   async function handleSave() {
     setStatus('saving')
@@ -95,13 +97,13 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
               <div className="flex items-center gap-1.5">
                 <ScoreButton onClick={() => setHome(h => Math.max(0, h - 1))}>−</ScoreButton>
                 <span className="w-6 text-center text-xl font-black text-white">{home}</span>
-                <ScoreButton onClick={() => setHome(h => h + 1)}>+</ScoreButton>
+                <ScoreButton onClick={() => setHome(h => Math.min(20, h + 1))}>+</ScoreButton>
               </div>
               <span className="text-zinc-500">–</span>
               <div className="flex items-center gap-1.5">
                 <ScoreButton onClick={() => setAway(a => Math.max(0, a - 1))}>−</ScoreButton>
                 <span className="w-6 text-center text-xl font-black text-white">{away}</span>
-                <ScoreButton onClick={() => setAway(a => a + 1)}>+</ScoreButton>
+                <ScoreButton onClick={() => setAway(a => Math.min(20, a + 1))}>+</ScoreButton>
               </div>
             </div>
 

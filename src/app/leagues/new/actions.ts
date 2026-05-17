@@ -11,11 +11,13 @@ export async function createLeague(formData: FormData) {
   const name = formData.get('name') as string
   const tournamentId = formData.get('tournament_id') as string
 
-  if (!name?.trim() || !tournamentId) return { error: 'Missing fields' }
+  if (!name?.trim() || !tournamentId) {
+    redirect('/leagues/new?error=missing_fields')
+  }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
+  if (!user) redirect('/login')
 
   const invite_code = generateInviteCode()
 
@@ -25,9 +27,10 @@ export async function createLeague(formData: FormData) {
     .select()
     .single()
 
-  if (error || !league) return { error: error?.message ?? 'Failed to create league' }
+  if (error || !league) {
+    redirect('/leagues/new?error=create_failed')
+  }
 
-  // Auto-join creator
   await supabase.from('league_members').insert({ league_id: league.id, user_id: user.id })
 
   redirect(`/leagues/${league.id}`)

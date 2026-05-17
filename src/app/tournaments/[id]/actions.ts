@@ -25,6 +25,13 @@ export async function savePrediction(
     return { error: 'Predictions are locked for this fixture' }
   }
 
+  if (
+    !Number.isInteger(homeScore) || !Number.isInteger(awayScore) ||
+    homeScore < 0 || awayScore < 0 || homeScore > 20 || awayScore > 20
+  ) {
+    return { error: 'Invalid score' }
+  }
+
   const { error } = await supabase
     .from('predictions')
     .upsert(

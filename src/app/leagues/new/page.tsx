@@ -3,10 +3,21 @@ import { redirect } from 'next/navigation'
 import { createLeague } from './actions'
 import Link from 'next/link'
 
-export default async function NewLeaguePage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  missing_fields: 'Please fill in all fields.',
+  create_failed: 'Something went wrong. Try again.',
+}
+
+export default async function NewLeaguePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const { error } = await searchParams
 
   const { data: tournaments } = await supabase
     .from('tournaments')
@@ -23,6 +34,12 @@ export default async function NewLeaguePage() {
 
         <h1 className="mb-1 text-2xl font-black tracking-tight text-white">Create a league</h1>
         <p className="mb-8 text-sm text-zinc-500">Invite your mates and see who predicts best.</p>
+
+        {error && (
+          <p className="mb-4 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {ERROR_MESSAGES[error] ?? 'Something went wrong.'}
+          </p>
+        )}
 
         <form action={createLeague} className="space-y-4">
           <div>
