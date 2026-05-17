@@ -15,12 +15,12 @@ export async function savePrediction(
   if (!user) return { error: 'Not authenticated' }
 
   // Verify fixture is still open
-  const { data: fixture } = await supabase
+  const fixtureResult = await supabase
     .from('fixtures')
     .select('*')
     .eq('id', fixtureId)
     .single()
-    .overrideTypes<Fixture>()
+  const fixture = fixtureResult.data as Fixture | null
 
   if (!fixture) return { error: 'Fixture not found' }
   if (fixture.status !== 'scheduled' || new Date(fixture.kickoff_time) <= new Date()) {
