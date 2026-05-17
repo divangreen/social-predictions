@@ -83,7 +83,7 @@ export type Database = {
           id: string
           name: string
           sport: string
-          status: string | null
+          status: 'upcoming' | 'active' | 'completed' | null
         }
         Insert: {
           id?: string
@@ -110,7 +110,7 @@ export type Database = {
           is_underdog_home: boolean | null
           is_underdog_away: boolean | null
           kickoff_time: string
-          status: string | null
+          status: 'scheduled' | 'live' | 'completed' | null
           home_score: number | null
           away_score: number | null
           stage: string
@@ -154,7 +154,7 @@ export type Database = {
           fixture_id: string
           predicted_home_score: number
           predicted_away_score: number
-          status: string | null
+          status: 'pending' | 'scored' | 'void' | null
           points_earned: number | null
           is_perfect: boolean | null
           created_at: string

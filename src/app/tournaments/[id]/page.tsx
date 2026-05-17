@@ -24,12 +24,13 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   )
 
   // Group fixtures by stage
+  type FixtureRow = NonNullable<typeof fixtures>[number]
   const stages = Array.from(
     (fixtures ?? []).reduce((acc, f) => {
       if (!acc.has(f.stage)) acc.set(f.stage, [])
       acc.get(f.stage)!.push(f)
       return acc
-    }, new Map<string, typeof fixtures>())
+    }, new Map<string, FixtureRow[]>())
   )
 
   const now = new Date()
