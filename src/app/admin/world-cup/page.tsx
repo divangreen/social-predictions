@@ -12,6 +12,9 @@ export default async function AdminWCPage() {
   async function scoreGroup(formData: FormData) {
     'use server'
     const supabaseAdmin = await createClient()
+    const { data: { user: actionUser } } = await supabaseAdmin.auth.getUser()
+    if (!actionUser || !isAdmin(actionUser.id)) return
+
     const letter = formData.get('letter') as string
     const actual_first = formData.get('actual_first') as string
     const actual_second = formData.get('actual_second') as string
@@ -19,25 +22,27 @@ export default async function AdminWCPage() {
 
     const { data: preds } = await supabaseAdmin
       .from('bracket_predictions')
-      .select('id, user_id, first_place, second_place')
+      .select('id, user_id, first_place, second_place, points_earned')
       .eq('tournament_id', WC_TOURNAMENT_ID)
       .eq('group_letter', letter)
 
     if (!preds?.length) return
 
     for (const pred of preds) {
-      const pts =
+      const newPts =
         (pred.first_place === actual_first ? 5 : 0) +
         (pred.second_place === actual_second ? 3 : 0) +
         (pred.first_place === actual_second ? 1 : 0) +
         (pred.second_place === actual_first ? 1 : 0)
 
+      const delta = newPts - (pred.points_earned ?? 0)
+
       await supabaseAdmin
         .from('bracket_predictions')
-        .update({ points_earned: pts })
+        .update({ points_earned: newPts })
         .eq('id', pred.id)
 
-      if (pts > 0) {
+      if (delta !== 0) {
         const { data: u } = await supabaseAdmin
           .from('users')
           .select('total_points')
@@ -45,7 +50,7 @@ export default async function AdminWCPage() {
           .single()
         await supabaseAdmin
           .from('users')
-          .update({ total_points: (u?.total_points ?? 0) + pts })
+          .update({ total_points: Math.max(0, (u?.total_points ?? 0) + delta) })
           .eq('id', pred.user_id)
       }
     }

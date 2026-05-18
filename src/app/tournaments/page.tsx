@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { WC_LOCK_DATE, WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
+
+function daysUntilLock() {
+  return Math.max(0, Math.ceil((WC_LOCK_DATE.getTime() - Date.now()) / 86_400_000))
+}
 
 const SPORT_EMOJI: Record<string, string> = {
   football: '⚽',
@@ -37,6 +42,9 @@ export default async function TournamentsPage() {
   const upcoming = (tournaments ?? []).filter(t => t.status === 'upcoming')
   const ended = (tournaments ?? []).filter(t => t.status === 'completed')
 
+  const daysLeft = daysUntilLock()
+  const showUrgencyBanner = daysLeft > 0 && (tournaments ?? []).some(t => t.id === WC_TOURNAMENT_ID && t.status === 'upcoming')
+
   return (
     <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
@@ -62,6 +70,22 @@ export default async function TournamentsPage() {
             </Link>
           </div>
         </div>
+
+        {/* WC urgency banner */}
+        {showUrgencyBanner && (
+          <Link
+            href={`/tournaments/${WC_TOURNAMENT_ID}`}
+            className="mb-6 flex items-center justify-between rounded-2xl border border-yellow-500/40 bg-yellow-500/10 px-5 py-4 transition hover:bg-yellow-500/15 active:scale-[0.98]"
+          >
+            <div>
+              <p className="text-sm font-black text-yellow-300">
+                {daysLeft === 1 ? 'Last day!' : `${daysLeft} days left`} — lock in your WC picks
+              </p>
+              <p className="text-xs text-yellow-500/70">World Cup 2026 · picks lock June 11</p>
+            </div>
+            <span className="text-xl">⚽</span>
+          </Link>
+        )}
 
         {!tournaments?.length ? (
           <div className="rounded-2xl border border-border bg-surface-1 p-10 text-center">
@@ -161,10 +185,10 @@ function TournamentCard({
       href={`/tournaments/${t.id}`}
       className={`flex items-center justify-between rounded-2xl border ${borderClass} bg-surface-1 px-5 py-4 transition hover:border-fg-3 active:scale-[0.98]`}
     >
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{emoji}</span>
-        <div>
-          <p className="font-bold text-fg-1">{t.name}</p>
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="shrink-0 text-2xl">{emoji}</span>
+        <div className="min-w-0">
+          <p className="truncate font-bold text-fg-1">{t.name}</p>
           <p className="text-xs capitalize text-fg-3">{t.sport}</p>
         </div>
       </div>

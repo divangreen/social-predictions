@@ -4,18 +4,39 @@ import Link from 'next/link'
 import FixtureCard from './_components/FixtureCard'
 import type { Prediction } from '@/types/database'
 import { WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
-import { saveChampionPick } from '@/app/world-cup/knockout/actions'
+import { saveChampionPick, saveTopScorerPick } from '@/app/world-cup/knockout/actions'
 import type { KnockoutPicks } from '@/lib/wc2026-bracket'
+
+const WC_TEAMS = [
+  'Albania','Algeria','Argentina','Australia','Belgium','Bosnia-Herzegovina',
+  'Brazil','Cameroon','Canada','Chile','Colombia','Costa Rica',
+  'Croatia','Czech Republic','Ecuador','El Salvador','England','France',
+  'Germany','Ghana','Honduras','Iran','Jamaica','Japan',
+  'Mexico','Morocco','Netherlands','New Zealand','Nigeria','Panama',
+  'Paraguay','Peru','Poland','Portugal','Qatar','Saudi Arabia',
+  'Senegal','Serbia','South Africa','South Korea','Spain','Switzerland',
+  'Tunisia','Turkey','Ukraine','Uruguay','USA','Venezuela',
+]
+
+const WC_TOP_SCORERS = [
+  'Kylian Mbappé', 'Vinicius Jr', 'Lionel Messi', 'Lamine Yamal',
+  'Jude Bellingham', 'Bukayo Saka', 'Julián Álvarez', 'Pedri',
+  'Luis Díaz', 'Darwin Núñez', 'Federico Valverde', 'Bruno Fernandes',
+  'Cristiano Ronaldo', 'Richarlison', 'Ademola Lookman', 'Cody Gakpo',
+  'Memphis Depay', 'Christian Pulisic', 'Jonathan David', 'Leroy Sané',
+  'Kai Havertz', 'Sadio Mané', 'Carlos Vela', 'Alvaro Morata',
+  'Harry Kane', 'Robert Lewandowski',
+].sort()
 
 export default async function TournamentPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ saved_champion?: string; error?: string }>
+  searchParams: Promise<{ saved_champion?: string; saved_top_scorer?: string; error?: string }>
 }) {
   const { id } = await params
-  const { saved_champion, error: spError } = await searchParams
+  const { saved_champion, saved_top_scorer, error: spError } = await searchParams
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -31,7 +52,9 @@ export default async function TournamentPage({
       : Promise.resolve({ data: null }),
   ])
 
-  const existingChampion = (knockoutRow?.picks as unknown as KnockoutPicks | null)?.champion ?? null
+  const existingKnockout = knockoutRow?.picks as unknown as KnockoutPicks | null
+  const existingChampion = existingKnockout?.champion ?? null
+  const existingTopScorer = existingKnockout?.topScorer ?? null
 
   const username = profile?.username ?? user.email?.split('@')[0] ?? 'predictr'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -60,7 +83,6 @@ export default async function TournamentPage({
     return 2
   }
 
-  // Sort stages: stages with upcoming/live fixtures first, completed stages last
   const sortedStages = stages
     .map(([stage, stageFixtures]) => {
       const sorted = [...stageFixtures].sort((a, b) => {
@@ -102,11 +124,19 @@ export default async function TournamentPage({
         {/* World Cup prediction hub */}
         {id === WC_TOURNAMENT_ID && (
           <div className="mb-6 space-y-2">
+
+            {/* Toast messages */}
             {saved_champion && (
               <p className="rounded-xl bg-green-500/10 px-4 py-2 text-sm text-green-400">Champion pick saved!</p>
             )}
+            {saved_top_scorer && (
+              <p className="rounded-xl bg-green-500/10 px-4 py-2 text-sm text-green-400">Top scorer pick saved!</p>
+            )}
             {spError === 'no_champion' && (
               <p className="rounded-xl bg-red-500/10 px-4 py-2 text-sm text-red-400">Please select a team first.</p>
+            )}
+            {spError === 'no_top_scorer' && (
+              <p className="rounded-xl bg-red-500/10 px-4 py-2 text-sm text-red-400">Please select a player first.</p>
             )}
             {spError === 'save_failed' && (
               <p className="rounded-xl bg-red-500/10 px-4 py-2 text-sm text-red-400">Something went wrong. Try again.</p>
@@ -126,16 +156,7 @@ export default async function TournamentPage({
                   className="flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-white outline-none transition focus:border-white"
                 >
                   <option value="">Select a team…</option>
-                  {[
-                    'Albania','Algeria','Argentina','Australia','Belgium','Bosnia-Herzegovina',
-                    'Brazil','Cameroon','Canada','Chile','Colombia','Costa Rica',
-                    'Croatia','Czech Republic','Ecuador','El Salvador','England','France',
-                    'Germany','Ghana','Honduras','Iran','Jamaica','Japan',
-                    'Mexico','Morocco','Netherlands','New Zealand','Nigeria','Panama',
-                    'Paraguay','Peru','Poland','Portugal','Qatar','Saudi Arabia',
-                    'Senegal','Serbia','South Africa','South Korea','Spain','Switzerland',
-                    'Tunisia','Turkey','Ukraine','Uruguay','USA','Venezuela',
-                  ].map(t => <option key={t} value={t}>{t}</option>)}
+                  {WC_TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 <button
                   type="submit"
@@ -146,6 +167,32 @@ export default async function TournamentPage({
               </div>
             </form>
 
+            {/* Top scorer pick */}
+            <form action={saveTopScorerPick} className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+              <input type="hidden" name="redirect_to" value={`/tournaments/${id}`} />
+              <p className="mb-1 text-base font-black text-white">Top scorer?</p>
+              <p className="mb-3 text-xs text-zinc-400">
+                {existingTopScorer ? `Your pick: ${existingTopScorer}` : 'Pick the golden boot winner'}
+              </p>
+              <div className="flex gap-2">
+                <select
+                  name="top_scorer"
+                  defaultValue={existingTopScorer ?? ''}
+                  className="flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-white outline-none transition focus:border-white"
+                >
+                  <option value="">Select a player…</option>
+                  {WC_TOP_SCORERS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-black hover:bg-zinc-200 transition"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+
+            {/* Nav tiles */}
             <div className="grid grid-cols-2 gap-2">
               <Link
                 href="/world-cup/bracket"

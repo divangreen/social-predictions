@@ -47,6 +47,7 @@ export type KnockoutPicks = {
   qf: (string | null)[]               // 4 winners
   sf: (string | null)[]               // 2 winners
   champion: string | null
+  topScorer?: string | null
 }
 
 export function emptyKnockoutPicks(): KnockoutPicks {

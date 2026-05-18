@@ -113,7 +113,7 @@ function TeamStatsTable({ stats, homeLogo, awayLogo, homeTeam, awayTeam }: {
           {homeLogo && <img src={homeLogo} alt={homeTeam} className="h-8 w-8 object-contain" />}
           <span className="text-xs font-black uppercase tracking-wider text-fg-1">{homeTeam}</span>
         </div>
-        <span className="w-32 text-center text-[10px] font-bold uppercase tracking-wider text-fg-3">Team Stats</span>
+        <span className="w-24 text-center text-[10px] font-bold uppercase tracking-wider text-fg-3 sm:w-32">Team Stats</span>
         <div className="flex flex-1 items-center justify-end gap-2">
           <span className="text-xs font-black uppercase tracking-wider text-fg-1">{awayTeam}</span>
           {awayLogo && <img src={awayLogo} alt={awayTeam} className="h-8 w-8 object-contain" />}
@@ -125,7 +125,7 @@ function TeamStatsTable({ stats, homeLogo, awayLogo, homeTeam, awayTeam }: {
         {shooting.map((row, i) => (
           <div key={row.label} className={`flex items-center px-4 py-2.5 ${i > 0 ? 'border-t border-border/50' : ''}`}>
             <span className="flex-1 font-mono text-sm font-bold text-fg-1">{row.home}</span>
-            <span className="w-40 text-center text-xs font-bold text-fg-3">{row.label}</span>
+            <span className="w-28 text-center text-xs font-bold text-fg-3 sm:w-40">{row.label}</span>
             <span className="flex-1 text-right font-mono text-sm font-bold text-fg-1">{row.away}</span>
           </div>
         ))}
@@ -136,7 +136,7 @@ function TeamStatsTable({ stats, homeLogo, awayLogo, homeTeam, awayTeam }: {
         {other.map((row, i) => (
           <div key={row.label} className={`flex items-center px-4 py-2.5 ${i > 0 ? 'border-t border-border/50' : ''}`}>
             <span className="flex-1 font-mono text-sm font-bold text-fg-1">{row.home}</span>
-            <span className="w-40 text-center text-xs font-bold text-fg-3">{row.label}</span>
+            <span className="w-28 text-center text-xs font-bold text-fg-3 sm:w-40">{row.label}</span>
             <span className="flex-1 text-right font-mono text-sm font-bold text-fg-1">{row.away}</span>
           </div>
         ))}
@@ -184,13 +184,13 @@ export function NbaTabs({
       </div>
 
       {tab === 'home' && (
-        <div className="rounded-2xl border border-border bg-surface-1 p-3">
+        <div className="rounded-2xl border border-border bg-surface-1 p-3 overflow-hidden">
           <PlayerTable players={homePlayers} teamName={homeTeam} />
         </div>
       )}
 
       {tab === 'away' && (
-        <div className="rounded-2xl border border-border bg-surface-1 p-3">
+        <div className="rounded-2xl border border-border bg-surface-1 p-3 overflow-hidden">
           <PlayerTable players={awayPlayers} teamName={awayTeam} />
         </div>
       )}

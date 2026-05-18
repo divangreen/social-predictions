@@ -43,7 +43,7 @@ function ScoreButton({ onClick, children }: { onClick: () => void; children: Rea
     <button
       type="button"
       onClick={onClick}
-      className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-xl font-black text-fg-1 transition active:scale-90 hover:bg-border"
+      className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 text-xl font-black text-fg-1 transition active:scale-90 hover:bg-border"
     >
       {children}
     </button>
@@ -105,8 +105,8 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
         href={`/tournaments/${tournamentId}/fixtures/${fixture.id}`}
         className="mb-3 flex items-center justify-between hover:opacity-80 transition"
       >
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-fg-3">{fixture.stage}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-xs font-bold uppercase tracking-wider text-fg-3">{fixture.stage}</span>
           {isLive && (
             <span className="flex items-center gap-1 rounded-full bg-live/10 px-2 py-0.5 text-[10px] font-bold text-live">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live" />
@@ -114,18 +114,18 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
             </span>
           )}
         </div>
-        <span className="font-mono text-xs text-fg-3">{kickoffLabel} →</span>
+        <span className="shrink-0 font-mono text-xs text-fg-3">{kickoffLabel} →</span>
       </Link>
 
       {/* Teams + score area */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 overflow-hidden">
 
         {/* Home team */}
-        <div className="flex flex-1 flex-col items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
           {fixture.home_team_logo && (
             <img src={fixture.home_team_logo} alt={fixture.home_team_name} className="h-9 w-9 object-contain" />
           )}
-          <span className="text-center text-sm font-bold text-fg-1 leading-tight">{fixture.home_team_name}</span>
+          <span className="w-full wrap-break-word text-center text-sm font-bold text-fg-1 leading-tight">{fixture.home_team_name}</span>
           {fixture.is_underdog_home && (
             <span className="rounded-full bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold text-gold">underdog</span>
           )}
@@ -152,7 +152,7 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex shrink-0 flex-col items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
                 <ScoreButton onClick={() => setHome(h => Math.max(0, h - 1))}>−</ScoreButton>
@@ -182,11 +182,11 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
         )}
 
         {/* Away team */}
-        <div className="flex flex-1 flex-col items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
           {fixture.away_team_logo && (
             <img src={fixture.away_team_logo} alt={fixture.away_team_name} className="h-9 w-9 object-contain" />
           )}
-          <span className="text-center text-sm font-bold text-fg-1 leading-tight">{fixture.away_team_name}</span>
+          <span className="w-full wrap-break-word text-center text-sm font-bold text-fg-1 leading-tight">{fixture.away_team_name}</span>
           {fixture.is_underdog_away && (
             <span className="rounded-full bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold text-gold">underdog</span>
           )}

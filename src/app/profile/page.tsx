@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { LogoutButton } from '../tournaments/_components/LogoutButton'
+import { computeStreak } from '@/lib/streak'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -21,6 +22,7 @@ export default async function ProfilePage() {
   const correct = scored.filter(p => (p.points_earned ?? 0) > 0).length
   const accuracy = scored.length > 0 ? Math.round((correct / scored.length) * 100) : 0
   const leagueCount = leagues?.length ?? 0
+  const streak = computeStreak(allPredictions)
 
   const recentScored = [...scored]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -58,7 +60,7 @@ export default async function ProfilePage() {
           </div>
 
           {/* Stats scoreboard */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {([
               { label: 'Points', value: String(totalPoints), highlight: true },
               { label: 'Accuracy', value: `${accuracy}%`, highlight: false },
@@ -73,6 +75,19 @@ export default async function ProfilePage() {
               </div>
             ))}
           </div>
+
+          {/* Streak */}
+          {streak >= 2 && (
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-orange-500/10 px-4 py-3">
+              <span className="text-xl">🔥</span>
+              <p className="text-sm font-black text-orange-400">
+                {streak} pick streak — keep it going!
+              </p>
+            </div>
+          )}
+          {streak === 1 && (
+            <p className="mt-4 text-center text-sm font-bold text-orange-400">🔥 1 pick streak</p>
+          )}
 
           {perfectScores > 0 && (
             <p className="mt-4 text-center text-sm font-bold text-goal">

@@ -109,8 +109,8 @@ export function MatchTabs({ fixture, details, myPrediction, peerPredictions, use
                   className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-border' : ''} ${e.team === 'home' ? 'flex-row' : 'flex-row-reverse'}`}
                 >
                   {/* Player name side */}
-                  <div className={`flex-1 ${e.team === 'home' ? 'text-left' : 'text-right'}`}>
-                    <p className="text-sm font-bold text-fg-1">
+                  <div className={`min-w-0 flex-1 ${e.team === 'home' ? 'text-left' : 'text-right'}`}>
+                    <p className="truncate text-sm font-bold text-fg-1">
                       {e.player} {EVENT_LABEL[e.type] && <span className="text-xs text-fg-3">{EVENT_LABEL[e.type]}</span>}
                     </p>
                     {e.detail && e.type === 'goal' && (

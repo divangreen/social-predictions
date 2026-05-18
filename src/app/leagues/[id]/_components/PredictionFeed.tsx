@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 
 const EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
@@ -36,7 +36,7 @@ export function PredictionFeed({
   leagueId: string
 }) {
   const [items, setItems] = useState<FeedItem[]>(initial)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const channel = supabase

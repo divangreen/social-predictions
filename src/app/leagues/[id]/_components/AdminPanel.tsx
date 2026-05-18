@@ -69,7 +69,7 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 pb-8 sm:items-center">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-surface-1 p-5">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-surface-1 p-5 max-h-[85vh] overflow-y-auto">
 
             {/* Header */}
             <div className="mb-4 flex items-center justify-between">

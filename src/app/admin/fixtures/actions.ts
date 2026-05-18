@@ -36,10 +36,10 @@ export async function saveFixtureResult(
 
   if (fixtureError || !fixture) return { error: fixtureError?.message ?? 'Failed to update fixture' }
 
-  // Fetch all predictions for this fixture
+  // Fetch all predictions for this fixture (including existing points to compute delta on re-score)
   const { data: predictions } = await supabase
     .from('predictions')
-    .select('id, user_id, predicted_home_score, predicted_away_score')
+    .select('id, user_id, predicted_home_score, predicted_away_score, points_earned')
     .eq('fixture_id', fixtureId)
 
   if (!predictions?.length) {
@@ -84,15 +84,17 @@ export async function saveFixtureResult(
     )
   )
 
-  // Increment user total_points
-  const pointsByUser = new Map<string, number>()
+  // Apply point deltas (new - old) per user to prevent double-increment on re-score
+  const deltaByUser = new Map<string, number>()
   updates.forEach(u => {
-    pointsByUser.set(u.user_id, (pointsByUser.get(u.user_id) ?? 0) + u.points_earned)
+    const oldPts = predictions.find(p => p.id === u.id)?.points_earned ?? 0
+    const delta = u.points_earned - oldPts
+    deltaByUser.set(u.user_id, (deltaByUser.get(u.user_id) ?? 0) + delta)
   })
 
   await Promise.all(
-    Array.from(pointsByUser.entries()).map(async ([userId, pts]) => {
-      if (pts === 0) return
+    Array.from(deltaByUser.entries()).map(async ([userId, delta]) => {
+      if (delta === 0) return
       const { data: currentUser } = await supabase
         .from('users')
         .select('total_points')
@@ -100,7 +102,7 @@ export async function saveFixtureResult(
         .single()
       return supabase
         .from('users')
-        .update({ total_points: (currentUser?.total_points ?? 0) + pts })
+        .update({ total_points: Math.max(0, (currentUser?.total_points ?? 0) + delta) })
         .eq('id', userId)
     })
   )
