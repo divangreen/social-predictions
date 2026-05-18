@@ -143,21 +143,34 @@ async function syncFromFootballData(leagueId: string, supabase: ReturnType<typeo
 // ─── TheSportsDB sync ─────────────────────────────────────────────────────────
 
 async function syncFromSportsdb(leagueId: string, season: string, supabase: ReturnType<typeof makeSupabase>) {
-  const [nextRes, lastRes] = await Promise.all([
-    fetch(`https://www.thesportsdb.com/api/v1/json/3/eventsnext.php?id=${leagueId}`, { next: { revalidate: 0 } }),
-    fetch(`https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id=${leagueId}`, { next: { revalidate: 0 } }),
-  ])
+  const seasonRes = await fetch(
+    `https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=${leagueId}&s=${encodeURIComponent(season)}`,
+    { next: { revalidate: 0 } }
+  )
 
-  const [nextData, lastData] = await Promise.all([
-    nextRes.ok ? nextRes.json().catch(() => ({ events: [] })) : { events: [] },
-    lastRes.ok ? lastRes.json().catch(() => ({ events: [] })) : { events: [] },
-  ]) as [{ events?: SportsdbEvent[] }, { events?: SportsdbEvent[] }]
-  const seen = new Set<string>()
-  const events: SportsdbEvent[] = [...(lastData.events ?? []), ...(nextData.events ?? [])].filter(e => {
-    if (seen.has(e.idEvent)) return false
-    seen.add(e.idEvent)
-    return true
-  })
+  const seasonData = seasonRes.ok
+    ? await seasonRes.json().catch(() => ({ events: [] }))
+    : { events: [] }
+
+  let events: SportsdbEvent[] = seasonData.events ?? []
+
+  // Fall back to next+last if season endpoint returns nothing
+  if (!events.length) {
+    const [nextRes, lastRes] = await Promise.all([
+      fetch(`https://www.thesportsdb.com/api/v1/json/3/eventsnext.php?id=${leagueId}`, { next: { revalidate: 0 } }),
+      fetch(`https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id=${leagueId}`, { next: { revalidate: 0 } }),
+    ])
+    const [nextData, lastData] = await Promise.all([
+      nextRes.ok ? nextRes.json().catch(() => ({ events: [] })) : { events: [] },
+      lastRes.ok ? lastRes.json().catch(() => ({ events: [] })) : { events: [] },
+    ]) as [{ events?: SportsdbEvent[] }, { events?: SportsdbEvent[] }]
+    const seen = new Set<string>()
+    events = [...(lastData.events ?? []), ...(nextData.events ?? [])].filter(e => {
+      if (seen.has(e.idEvent)) return false
+      seen.add(e.idEvent)
+      return true
+    })
+  }
 
   if (!events.length) return { synced: 0, total: 0, tournament: leagueId }
 
