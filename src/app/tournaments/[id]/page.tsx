@@ -63,25 +63,37 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        {/* World Cup Group Stage banner */}
+        {/* World Cup prediction hub */}
         {id === WC_TOURNAMENT_ID && (
-          <div className="mb-6 grid grid-cols-2 gap-3">
-            <Link
-              href="/world-cup/bracket"
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-4 transition hover:bg-white/10"
-            >
-              <div>
-                <p className="font-black text-white text-sm">My Picks</p>
-                <p className="text-xs text-zinc-400">Pick group winners</p>
-              </div>
-              <span className="text-zinc-400">→</span>
-            </Link>
+          <div className="mb-6 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/world-cup/bracket"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/10"
+              >
+                <div>
+                  <p className="text-sm font-black text-white">Group Stage</p>
+                  <p className="text-xs text-zinc-400">Pick 1st &amp; 2nd</p>
+                </div>
+                <span className="text-zinc-400">→</span>
+              </Link>
+              <Link
+                href="/world-cup/knockout"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/10"
+              >
+                <div>
+                  <p className="text-sm font-black text-white">Knockout</p>
+                  <p className="text-xs text-zinc-400">Full bracket + champion</p>
+                </div>
+                <span className="text-zinc-400">→</span>
+              </Link>
+            </div>
             <Link
               href="/world-cup/leaderboard"
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-4 transition hover:bg-white/10"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/10"
             >
               <div>
-                <p className="font-black text-white text-sm">Leaderboard</p>
+                <p className="text-sm font-black text-white">Leaderboard</p>
                 <p className="text-xs text-zinc-400">See who&apos;s winning</p>
               </div>
               <span className="text-zinc-400">→</span>

@@ -45,9 +45,14 @@ export default async function WCBracketPage({
           <Link href="/tournaments" className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
             ← Tournaments
           </Link>
-          <Link href="/world-cup/leaderboard" className="text-sm font-bold text-zinc-400 hover:text-white transition">
-            Leaderboard →
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/world-cup/knockout" className="text-sm font-bold text-zinc-400 hover:text-white transition">
+              Knockout →
+            </Link>
+            <Link href="/world-cup/leaderboard" className="text-sm font-bold text-zinc-400 hover:text-white transition">
+              Leaderboard →
+            </Link>
+          </div>
         </div>
 
         {/* Header */}
