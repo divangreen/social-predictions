@@ -13,10 +13,10 @@ export async function GET(request: NextRequest) {
   const pts      = p.get('pts')     ?? '0'
   const perfect  = p.get('p')       === '1'
 
-  const resultLabel = perfect ? '🎯 Perfect score!' : Number(pts) > 0 ? `✅ +${pts} pts` : '✗ Missed this one'
+  const resultLabel = perfect ? 'Perfect score!' : Number(pts) > 0 ? `+${pts} pts` : 'Missed'
   const resultColor = perfect ? '#4ade80' : Number(pts) > 0 ? '#4ade80' : '#52525b'
 
-  return new ImageResponse(
+  try { return new ImageResponse(
     (
       <div
         style={{
@@ -68,5 +68,7 @@ export async function GET(request: NextRequest) {
       </div>
     ),
     { width: 1200, height: 630 }
-  )
+  )} catch (e) {
+    return new Response(`OG image error: ${String(e)}`, { status: 500 })
+  }
 }
