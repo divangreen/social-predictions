@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { LogoutButton } from './_components/LogoutButton'
 
 const SPORT_EMOJI: Record<string, string> = {
   football: '⚽',
@@ -55,7 +54,6 @@ export default async function TournamentsPage() {
             >
               {(user.email?.[0] ?? '?').toUpperCase()}
             </Link>
-            <LogoutButton />
             <Link
               href="/leagues/new"
               className="rounded-xl bg-fg-1 px-4 py-2 text-sm font-bold text-pitch transition hover:opacity-90 active:scale-95"

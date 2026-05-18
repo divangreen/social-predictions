@@ -26,24 +26,24 @@ export default async function NewLeaguePage({
     .order('name')
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
-        <Link href="/tournaments" className="mb-6 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/tournaments" className="mb-6 inline-flex items-center gap-1 text-sm text-fg-3 transition hover:text-fg-2">
           ← Back
         </Link>
 
-        <h1 className="mb-1 text-2xl font-black tracking-tight text-white">Create a league</h1>
-        <p className="mb-8 text-sm text-zinc-500">Invite your mates and see who predicts best.</p>
+        <h1 className="mb-1 mt-4 text-2xl font-black tracking-tight text-fg-1">Create a league</h1>
+        <p className="mb-8 text-sm text-fg-3">Invite your mates and see who predicts best.</p>
 
         {error && (
-          <p className="mb-4 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <p className="mb-4 rounded-xl bg-live/10 px-4 py-3 text-sm text-live">
             {ERROR_MESSAGES[error] ?? 'Something went wrong.'}
           </p>
         )}
 
         <form action={createLeague} className="space-y-4">
           <div>
-            <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-zinc-300">
+            <label htmlFor="name" className="mb-1.5 block text-sm font-bold text-fg-2">
               League name
             </label>
             <input
@@ -52,19 +52,19 @@ export default async function NewLeaguePage({
               type="text"
               required
               placeholder="e.g. Office Legends"
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-500 outline-none transition focus:border-zinc-400"
+              className="w-full rounded-xl border border-border bg-surface-1 px-4 py-3 text-fg-1 placeholder-fg-3 outline-none transition focus:border-fg-2"
             />
           </div>
 
           <div>
-            <label htmlFor="tournament_id" className="mb-1.5 block text-sm font-medium text-zinc-300">
+            <label htmlFor="tournament_id" className="mb-1.5 block text-sm font-bold text-fg-2">
               Tournament
             </label>
             <select
               id="tournament_id"
               name="tournament_id"
               required
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none transition focus:border-zinc-400"
+              className="w-full rounded-xl border border-border bg-surface-1 px-4 py-3 text-fg-1 outline-none transition focus:border-fg-2"
             >
               <option value="">Select a tournament…</option>
               {tournaments?.map(t => (
@@ -75,7 +75,7 @@ export default async function NewLeaguePage({
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-zinc-200"
+            className="w-full rounded-xl bg-fg-1 py-3 text-sm font-bold text-pitch transition hover:opacity-90 active:scale-[0.98]"
           >
             Create league
           </button>

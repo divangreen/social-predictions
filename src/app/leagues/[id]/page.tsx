@@ -6,18 +6,12 @@ import { PredictionFeed, type FeedItem } from './_components/PredictionFeed'
 
 const FEED_EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
 
-const RANK_STYLE: Record<number, string> = {
-  1: 'text-yellow-400',
-  2: 'text-zinc-300',
-  3: 'text-amber-600',
-}
-
 function Avatar({ username, avatarUrl }: { username: string; avatarUrl: string | null }) {
   if (avatarUrl) {
     return <img src={avatarUrl} alt={username} className="h-9 w-9 rounded-full object-cover" />
   }
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-700 text-sm font-bold text-white">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-fg-1">
       {username[0]?.toUpperCase()}
     </div>
   )
@@ -80,7 +74,6 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
 
   const userMap = new Map((memberUsers ?? []).map(u => [u.id, u]))
 
-  // Build feed: last 20 predictions for this tournament
   const feedPredictions = (predictions ?? [])
     .filter(p => fixtureSet.has(p.fixture_id))
     .slice(0, 20)
@@ -132,69 +125,69 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
   const inviteUrl = `${siteUrl}/join/${league.invite_code}`
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
 
         <div className="mb-6">
-          <Link href="/tournaments" className="mb-3 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
+          <Link href="/tournaments" className="mb-4 inline-flex items-center gap-1 text-sm text-fg-3 transition hover:text-fg-2">
             ← Tournaments
           </Link>
-          <h1 className="text-2xl font-black tracking-tight text-white">{league.name}</h1>
-          {tournament?.name && <p className="text-sm text-zinc-500">{tournament.name}</p>}
+          <h1 className="text-2xl font-black tracking-tight text-fg-1">{league.name}</h1>
+          {tournament?.name && <p className="text-sm text-fg-3">{tournament.name}</p>}
         </div>
 
-        <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Invite your mates</p>
-          <p className="mb-3 break-all text-sm font-medium text-white">{inviteUrl}</p>
+        {/* Invite card */}
+        <div className="mb-6 rounded-2xl border border-border bg-surface-1 p-4">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-fg-3">Invite your mates</p>
+          <p className="mb-3 break-all font-mono text-sm text-fg-2">{inviteUrl}</p>
           <div className="flex gap-2">
             <CopyInviteButton text={inviteUrl} />
             <Link
               href={`/tournaments/${tournamentId}`}
-              className="flex-1 rounded-xl border border-zinc-700 py-2 text-center text-sm font-medium text-zinc-300 transition hover:border-zinc-500"
+              className="flex-1 rounded-xl border border-border py-2 text-center text-sm font-bold text-fg-2 transition hover:border-fg-3 hover:text-fg-1"
             >
               Make predictions
             </Link>
           </div>
         </div>
 
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Leaderboard</h2>
+        {/* Leaderboard */}
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">Leaderboard</h2>
         <div className="space-y-2">
           {leaderboard.map((entry, i) => {
             const rank = i + 1
             const isMe = entry.userId === user.id
+            const rankLabel = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : String(rank)
             return (
               <div
                 key={entry.userId}
-                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition ${
-                  isMe ? 'border-white/20 bg-white/5' : 'border-zinc-800 bg-zinc-900'
+                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
+                  isMe ? 'border-gold/20 bg-gold/5' : 'border-border bg-surface-1'
                 }`}
               >
-                <span className={`w-6 text-center text-sm font-black ${RANK_STYLE[rank] ?? 'text-zinc-500'}`}>
-                  {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
-                </span>
+                <span className="w-6 text-center text-sm font-black text-fg-3">{rankLabel}</span>
                 <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm font-semibold text-white">
-                    {entry.username} {isMe && <span className="text-xs text-zinc-500">(you)</span>}
+                  <p className="truncate text-sm font-bold text-fg-1">
+                    {entry.username}{isMe && <span className="ml-1 text-xs text-fg-3">(you)</span>}
                   </p>
-                  <p className="text-xs text-zinc-500">
-                    {entry.predictionsMade} picks
-                    {entry.perfectScores > 0 && ` · 🎯 ${entry.perfectScores} perfect`}
+                  <p className="font-mono text-xs text-fg-3">
+                    {entry.predictionsMade} picks{entry.perfectScores > 0 && ` · 🎯 ${entry.perfectScores}`}
                   </p>
                 </div>
-                <span className="text-lg font-black text-white">{entry.points}</span>
+                <span className="font-mono text-lg font-black text-gold">{entry.points}</span>
               </div>
             )
           })}
 
           {leaderboard.length === 0 && (
-            <div className="rounded-2xl border border-zinc-800 p-8 text-center">
-              <p className="text-zinc-400">No members yet. Share the invite link!</p>
+            <div className="rounded-2xl border border-border bg-surface-1 p-8 text-center">
+              <p className="text-fg-2">No members yet. Share the invite link!</p>
             </div>
           )}
         </div>
 
-        <h2 className="mb-3 mt-8 text-xs font-semibold uppercase tracking-widest text-zinc-500">Prediction feed</h2>
+        <h2 className="mb-3 mt-8 text-xs font-bold uppercase tracking-widest text-fg-3">Prediction feed</h2>
         <PredictionFeed initial={feedItems} currentUserId={user.id} leagueId={id} />
 
       </div>

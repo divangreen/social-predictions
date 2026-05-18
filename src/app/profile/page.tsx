@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { LogoutButton } from '../tournaments/_components/LogoutButton'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -37,10 +38,11 @@ export default async function ProfilePage() {
     <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
 
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link href="/tournaments" className="text-sm text-fg-3 transition hover:text-fg-2">
             ← Tournaments
           </Link>
+          <LogoutButton />
         </div>
 
         {/* Profile card */}
