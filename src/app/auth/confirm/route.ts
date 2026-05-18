@@ -48,13 +48,25 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Ensure user row exists in public.users
+  // Ensure user row exists in public.users; detect new signup for onboarding
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
+    const { data: existingProfile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    const isNewUser = !existingProfile
+
     await supabase.from('users').upsert(
       { id: user.id, username: user.email!.split('@')[0] },
       { onConflict: 'id', ignoreDuplicates: true }
     )
+
+    if (isNewUser) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
   }
 
   return response
