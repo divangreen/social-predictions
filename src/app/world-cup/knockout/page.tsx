@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { WC_LOCK_DATE, WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
 import { emptyKnockoutPicks, type KnockoutPicks } from '@/lib/wc2026-bracket'
 import KnockoutBracket from './KnockoutBracket'
+import ShareBracketButton from '../_components/ShareBracketButton'
 
 function daysUntil(date: Date) {
   return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000))
@@ -16,8 +17,9 @@ export default async function WCKnockoutPage() {
 
   const locked = new Date() >= WC_LOCK_DATE
   const daysLeft = daysUntil(WC_LOCK_DATE)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://social-predictions.vercel.app'
 
-  const [{ data: groupRows }, { data: knockoutRow }] = await Promise.all([
+  const [{ data: groupRows }, { data: knockoutRow }, { data: profile }] = await Promise.all([
     supabase
       .from('bracket_predictions')
       .select('group_letter, first_place, second_place')
@@ -29,6 +31,7 @@ export default async function WCKnockoutPage() {
       .eq('user_id', user.id)
       .eq('tournament_id', WC_TOURNAMENT_ID)
       .single(),
+    supabase.from('users').select('username').eq('id', user.id).single(),
   ])
 
   const groupPicks = new Map(
@@ -36,6 +39,8 @@ export default async function WCKnockoutPage() {
   )
 
   const initial: KnockoutPicks = (knockoutRow?.picks as unknown as KnockoutPicks) ?? emptyKnockoutPicks()
+  const username = profile?.username ?? user.email?.split('@')[0] ?? 'user'
+  const hasKnockoutPicks = !!knockoutRow?.picks
 
   return (
     <main className="min-h-screen bg-black px-4 py-8">
@@ -74,6 +79,12 @@ export default async function WCKnockoutPage() {
           initial={initial}
           locked={locked}
         />
+
+        {hasKnockoutPicks && (
+          <div className="mt-4 pb-8">
+            <ShareBracketButton username={username} siteUrl={siteUrl} />
+          </div>
+        )}
 
       </div>
     </main>

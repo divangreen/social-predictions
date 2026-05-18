@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { WC2026_GROUPS, WC_LOCK_DATE, WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
 import { saveBracketPicks } from './actions'
+import ShareBracketButton from '../_components/ShareBracketButton'
 
 const ERRORS: Record<string, string> = {
   locked: 'Predictions are locked — the tournament has started.',
@@ -26,16 +27,20 @@ export default async function WCBracketPage({
   const { error, saved } = await searchParams
   const locked = new Date() >= WC_LOCK_DATE
   const daysLeft = daysUntil(WC_LOCK_DATE)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://social-predictions.vercel.app'
 
-  // Load existing picks
-  const { data: existing } = await supabase
-    .from('bracket_predictions')
-    .select('group_letter, first_place, second_place')
-    .eq('user_id', user.id)
-    .eq('tournament_id', WC_TOURNAMENT_ID)
+  const [{ data: existing }, { data: profile }] = await Promise.all([
+    supabase
+      .from('bracket_predictions')
+      .select('group_letter, first_place, second_place')
+      .eq('user_id', user.id)
+      .eq('tournament_id', WC_TOURNAMENT_ID),
+    supabase.from('users').select('username').eq('id', user.id).single(),
+  ])
 
   const picksMap = new Map(existing?.map(r => [r.group_letter, r]) ?? [])
   const hasPicks = (picksMap.size ?? 0) > 0
+  const username = profile?.username ?? user.email?.split('@')[0] ?? 'user'
 
   return (
     <main className="min-h-screen bg-black px-4 py-8">
@@ -140,6 +145,12 @@ export default async function WCBracketPage({
             </button>
           )}
         </form>
+
+        {hasPicks && (
+          <div className="mt-3">
+            <ShareBracketButton username={username} siteUrl={siteUrl} />
+          </div>
+        )}
 
       </div>
     </main>
