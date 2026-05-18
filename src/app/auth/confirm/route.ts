@@ -65,7 +65,11 @@ export async function GET(request: NextRequest) {
     )
 
     if (isNewUser) {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
+      const onboardingRedirect = NextResponse.redirect(new URL('/onboarding', request.url))
+      response.cookies.getAll().forEach(({ name, value, ...rest }) => {
+        onboardingRedirect.cookies.set(name, value, rest as Parameters<typeof onboardingRedirect.cookies.set>[2])
+      })
+      return onboardingRedirect
     }
   }
 
