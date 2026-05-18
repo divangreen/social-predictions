@@ -38,9 +38,14 @@ export default async function AdminWCPage() {
         .eq('id', pred.id)
 
       if (pts > 0) {
+        const { data: u } = await supabaseAdmin
+          .from('users')
+          .select('total_points')
+          .eq('id', pred.user_id)
+          .single()
         await supabaseAdmin
           .from('users')
-          .update({ total_points: supabaseAdmin.rpc('increment', { x: pts }) as unknown as number })
+          .update({ total_points: (u?.total_points ?? 0) + pts })
           .eq('id', pred.user_id)
       }
     }
