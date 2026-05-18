@@ -14,7 +14,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   const [{ data: tournament }, { data: fixtures }, { data: predictions }, { data: profile }] = await Promise.all([
     supabase.from('tournaments').select('*').eq('id', id).single(),
-    supabase.from('fixtures').select('*').eq('tournament_id', id).order('kickoff_time'),
+    supabase.from('fixtures').select('*').eq('tournament_id', id).order('kickoff_time', { ascending: true }),
     supabase.from('predictions').select('*').eq('user_id', user.id),
     supabase.from('users').select('username').eq('id', user.id).single(),
   ])
@@ -39,6 +39,28 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   const now = new Date()
   const isLive = tournament.status === 'active'
+
+  function fixtureOrder(f: { status: string | null; kickoff_time: string }): number {
+    if (f.status === 'live') return 0
+    if (new Date(f.kickoff_time) > now) return 1
+    return 2
+  }
+
+  // Sort stages: stages with upcoming/live fixtures first, completed stages last
+  const sortedStages = stages
+    .map(([stage, stageFixtures]) => {
+      const sorted = [...stageFixtures].sort((a, b) => {
+        const orderDiff = fixtureOrder(a) - fixtureOrder(b)
+        if (orderDiff !== 0) return orderDiff
+        return new Date(a.kickoff_time).getTime() - new Date(b.kickoff_time).getTime()
+      })
+      return [stage, sorted] as [string, typeof stageFixtures]
+    })
+    .sort(([, aFixtures], [, bFixtures]) => {
+      const aOrder = Math.min(...aFixtures.map(fixtureOrder))
+      const bOrder = Math.min(...bFixtures.map(fixtureOrder))
+      return aOrder - bOrder
+    })
 
   return (
     <main className="min-h-screen bg-pitch px-4 py-8">
@@ -108,7 +130,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           </div>
         ) : (
           <div className="space-y-8">
-            {stages.map(([stage, stageFixtures]) => (
+            {sortedStages.map(([stage, stageFixtures]) => (
               <div key={stage}>
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">{stage}</h2>
                 <div className="space-y-3">
