@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Trigger sync
         run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
+          RESPONSE=$(curl -sL -w "\n%{http_code}" \
             "${{ secrets.NEXT_PUBLIC_SITE_URL }}/api/sync/all?secret=${{ secrets.SYNC_SECRET }}")
           BODY=$(echo "$RESPONSE" | head -n -1)
           STATUS=$(echo "$RESPONSE" | tail -n 1)
