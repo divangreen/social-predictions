@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase-server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CopyInviteButton } from './_components/CopyInviteButton'
+import { PredictionFeed, type FeedItem } from './_components/PredictionFeed'
+
+const FEED_EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
 
 const RANK_STYLE: Record<number, string> = {
   1: 'text-yellow-400',
@@ -43,15 +46,17 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       memberIds.length
         ? supabase.from('users').select('id, username, avatar_url').in('id', memberIds)
         : Promise.resolve({ data: [] }),
-      supabase.from('fixtures').select('id').eq('tournament_id', tournamentId),
+      supabase.from('fixtures').select('id, home_team_name, away_team_name').eq('tournament_id', tournamentId),
       memberIds.length
         ? supabase.from('predictions')
-            .select('user_id, points_earned, is_perfect, fixture_id')
+            .select('id, user_id, fixture_id, predicted_home_score, predicted_away_score, points_earned, is_perfect, created_at')
             .in('user_id', memberIds)
+            .order('created_at', { ascending: false })
         : Promise.resolve({ data: [] }),
     ])
 
   const fixtureSet = new Set((tournamentFixtures ?? []).map(f => f.id))
+  const fixtureMap = new Map((tournamentFixtures ?? []).map(f => [f.id, f]))
 
   type LeaderboardEntry = {
     userId: string
@@ -74,6 +79,37 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
     })
 
   const userMap = new Map((memberUsers ?? []).map(u => [u.id, u]))
+
+  // Build feed: last 20 predictions for this tournament
+  const feedPredictions = (predictions ?? [])
+    .filter(p => fixtureSet.has(p.fixture_id))
+    .slice(0, 20)
+
+  const feedPredictionIds = feedPredictions.map(p => p.id)
+  const { data: reactionsData } = feedPredictionIds.length
+    ? await supabase.from('reactions').select('prediction_id, user_id, emoji').in('prediction_id', feedPredictionIds)
+    : Promise.resolve({ data: [] })
+
+  const feedItems: FeedItem[] = feedPredictions.map(p => {
+    const fixture = fixtureMap.get(p.fixture_id)
+    const u = userMap.get(p.user_id)
+    const predReactions = (reactionsData ?? []).filter(r => r.prediction_id === p.id)
+    return {
+      id: p.id,
+      userId: p.user_id,
+      username: u?.username ?? 'Unknown',
+      homeTeam: fixture?.home_team_name ?? '?',
+      awayTeam: fixture?.away_team_name ?? '?',
+      predictedHome: p.predicted_home_score,
+      predictedAway: p.predicted_away_score,
+      createdAt: p.created_at,
+      reactions: FEED_EMOJIS.map(e => ({
+        emoji: e,
+        count: predReactions.filter(r => r.emoji === e).length,
+        byMe: predReactions.some(r => r.emoji === e && r.user_id === user.id),
+      })),
+    }
+  })
 
   const leaderboard: LeaderboardEntry[] = memberIds
     .map(uid => {
@@ -155,6 +191,10 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
             </div>
           )}
         </div>
+
+        <h2 className="mb-3 mt-8 text-xs font-semibold uppercase tracking-widest text-zinc-500">Prediction feed</h2>
+        <PredictionFeed initial={feedItems} currentUserId={user.id} leagueId={id} />
+
       </div>
     </main>
   )
