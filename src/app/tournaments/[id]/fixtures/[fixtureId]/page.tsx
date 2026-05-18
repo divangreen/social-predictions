@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { fetchMatchDetails } from '@/lib/match-details'
 import { MatchTabs } from './_components/MatchTabs'
+import { NbaTabs } from './_components/NbaTabs'
 
 export default async function FixturePage({
   params,
@@ -116,14 +117,31 @@ export default async function FixturePage({
         </div>
 
         {/* Tabbed content */}
-        <MatchTabs
-          fixture={fixture}
-          details={matchDetails}
-          myPrediction={myPrediction ?? null}
-          peerPredictions={peerPredictions ?? []}
-          userMap={userMap}
-          allPreds={allPredictions ?? []}
-        />
+        {matchDetails.sport === 'basketball' ? (
+          <NbaTabs
+            homeTeam={fixture.home_team_name}
+            awayTeam={fixture.away_team_name}
+            homeLogo={fixture.home_team_logo ?? null}
+            awayLogo={fixture.away_team_logo ?? null}
+            homePlayers={matchDetails.nbaHomePlayers ?? []}
+            awayPlayers={matchDetails.nbaAwayPlayers ?? []}
+            teamStats={matchDetails.nbaTeamStats ?? []}
+            myPrediction={myPrediction ?? null}
+            peerPredictions={peerPredictions ?? []}
+            userMap={userMap}
+            allPreds={allPredictions ?? []}
+            isCompleted={isCompleted}
+          />
+        ) : (
+          <MatchTabs
+            fixture={fixture}
+            details={matchDetails}
+            myPrediction={myPrediction ?? null}
+            peerPredictions={peerPredictions ?? []}
+            userMap={userMap}
+            allPreds={allPredictions ?? []}
+          />
+        )}
 
       </div>
     </main>
