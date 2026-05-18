@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { savePrediction } from '../actions'
 import type { Fixture, Prediction } from '@/types/database'
 
@@ -99,8 +100,11 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
   return (
     <div className={`rounded-2xl border ${cardBorder} bg-surface-1 p-4 transition`}>
 
-      {/* Stage row + kickoff */}
-      <div className="mb-3 flex items-center justify-between">
+      {/* Stage row + kickoff — tapping this navigates to match detail */}
+      <Link
+        href={`/tournaments/${tournamentId}/fixtures/${fixture.id}`}
+        className="mb-3 flex items-center justify-between hover:opacity-80 transition"
+      >
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-fg-3">{fixture.stage}</span>
           {isLive && (
@@ -110,8 +114,8 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
             </span>
           )}
         </div>
-        <span className="font-mono text-xs text-fg-3">{kickoffLabel}</span>
-      </div>
+        <span className="font-mono text-xs text-fg-3">{kickoffLabel} →</span>
+      </Link>
 
       {/* Teams + score area */}
       <div className="flex items-center justify-between gap-2">
