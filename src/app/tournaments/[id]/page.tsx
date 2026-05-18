@@ -4,6 +4,8 @@ import Link from 'next/link'
 import FixtureCard from './_components/FixtureCard'
 import type { Prediction } from '@/types/database'
 import { WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
+import { saveChampionPick } from '@/app/world-cup/knockout/actions'
+import type { KnockoutPicks } from '@/lib/wc2026-bracket'
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -12,12 +14,17 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: tournament }, { data: fixtures }, { data: predictions }, { data: profile }] = await Promise.all([
+  const [{ data: tournament }, { data: fixtures }, { data: predictions }, { data: profile }, { data: knockoutRow }] = await Promise.all([
     supabase.from('tournaments').select('*').eq('id', id).single(),
     supabase.from('fixtures').select('*').eq('tournament_id', id).order('kickoff_time', { ascending: true }),
     supabase.from('predictions').select('*').eq('user_id', user.id),
     supabase.from('users').select('username').eq('id', user.id).single(),
+    id === WC_TOURNAMENT_ID
+      ? supabase.from('knockout_picks').select('picks').eq('user_id', user.id).eq('tournament_id', WC_TOURNAMENT_ID).single()
+      : Promise.resolve({ data: null }),
   ])
+
+  const existingChampion = (knockoutRow?.picks as unknown as KnockoutPicks | null)?.champion ?? null
 
   const username = profile?.username ?? user.email?.split('@')[0] ?? 'predictr'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -88,6 +95,39 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         {/* World Cup prediction hub */}
         {id === WC_TOURNAMENT_ID && (
           <div className="mb-6 space-y-2">
+            {/* Champion pick */}
+            <form action={saveChampionPick} className="rounded-2xl border-2 border-white bg-zinc-900 p-4">
+              <p className="mb-1 text-base font-black text-white">Who wins the World Cup?</p>
+              <p className="mb-3 text-xs text-zinc-400">
+                {existingChampion ? `Your pick: ${existingChampion}` : 'Pick your champion'}
+              </p>
+              <div className="flex gap-2">
+                <select
+                  name="champion"
+                  defaultValue={existingChampion ?? ''}
+                  className="flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-white outline-none transition focus:border-white"
+                >
+                  <option value="">Select a team…</option>
+                  {[
+                    'Albania','Algeria','Argentina','Australia','Belgium','Bosnia-Herzegovina',
+                    'Brazil','Cameroon','Canada','Chile','Colombia','Costa Rica',
+                    'Croatia','Czech Republic','Ecuador','El Salvador','England','France',
+                    'Germany','Ghana','Honduras','Iran','Jamaica','Japan',
+                    'Mexico','Morocco','Netherlands','New Zealand','Nigeria','Panama',
+                    'Paraguay','Peru','Poland','Portugal','Qatar','Saudi Arabia',
+                    'Senegal','Serbia','South Africa','South Korea','Spain','Switzerland',
+                    'Tunisia','Turkey','Ukraine','Uruguay','USA','Venezuela',
+                  ].map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-black hover:bg-zinc-200 transition"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+
             <div className="grid grid-cols-2 gap-2">
               <Link
                 href="/world-cup/bracket"
