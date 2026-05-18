@@ -79,15 +79,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing league_id or season' }, { status: 400 })
   }
 
-  // Fetch from TheSportsDB (free, no key needed)
-  const apiUrl = `https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=${leagueId}&s=${encodeURIComponent(season)}`
-  const res = await fetch(apiUrl, { next: { revalidate: 0 } })
-  if (!res.ok) {
+  // Fetch last 15 completed + next 15 upcoming events for current data
+  const [nextRes, lastRes] = await Promise.all([
+    fetch(`https://www.thesportsdb.com/api/v1/json/3/eventsnext.php?id=${leagueId}`, { next: { revalidate: 0 } }),
+    fetch(`https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id=${leagueId}`, { next: { revalidate: 0 } }),
+  ])
+
+  if (!nextRes.ok && !lastRes.ok) {
     return NextResponse.json({ error: 'TheSportsDB fetch failed' }, { status: 502 })
   }
 
-  const data = await res.json()
-  const events: TheSportsDBEvent[] = data.events ?? []
+  const [nextData, lastData] = await Promise.all([nextRes.json(), lastRes.json()])
+
+  // Deduplicate by idEvent
+  const seen = new Set<string>()
+  const events: TheSportsDBEvent[] = [...(lastData.events ?? []), ...(nextData.events ?? [])].filter(e => {
+    if (seen.has(e.idEvent)) return false
+    seen.add(e.idEvent)
+    return true
+  })
 
   if (!events.length) {
     return NextResponse.json({ synced: 0, message: 'No events found' })
