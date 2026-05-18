@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import FixtureCard from './_components/FixtureCard'
 import type { Prediction } from '@/types/database'
+import { WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -61,6 +62,20 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             )}
           </div>
         </div>
+
+        {/* World Cup Group Stage banner */}
+        {id === WC_TOURNAMENT_ID && (
+          <Link
+            href="/world-cup/bracket"
+            className="mb-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-4 transition hover:bg-white/10"
+          >
+            <div>
+              <p className="font-black text-white">Group Stage Predictions</p>
+              <p className="text-sm text-zinc-400">Pick who advances from each group</p>
+            </div>
+            <span className="text-zinc-400">→</span>
+          </Link>
+        )}
 
         {/* Fixtures */}
         {!fixtures?.length ? (

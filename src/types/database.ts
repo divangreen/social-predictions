@@ -285,6 +285,34 @@ export type Database = {
         }
         Relationships: []
       }
+      bracket_predictions: {
+        Row: {
+          id: string
+          user_id: string
+          tournament_id: string
+          group_letter: string
+          first_place: string
+          second_place: string
+          points_earned: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          tournament_id: string
+          group_letter: string
+          first_place: string
+          second_place: string
+          points_earned?: number | null
+          created_at?: string
+        }
+        Update: {
+          points_earned?: number | null
+          first_place?: string
+          second_place?: string
+        }
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: { [_ in never]: never }
