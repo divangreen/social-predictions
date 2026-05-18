@@ -126,16 +126,19 @@ export default async function WCBracketPage({
         )}
 
         {/* Champion pick */}
-        <form action={saveChampionPick} className="mb-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4">
-          <p className="mb-3 text-xs font-black uppercase tracking-widest text-yellow-600">Champion</p>
+        <form action={saveChampionPick} className="mb-6 rounded-2xl border-2 border-white bg-zinc-900 p-4">
+          <p className="mb-1 text-base font-black text-white">Who wins the World Cup?</p>
+          <p className="mb-3 text-xs text-zinc-400">
+            {existingChampion ? `Your pick: ${existingChampion}` : 'Pick your champion'}
+          </p>
           <div className="flex gap-2">
             <select
               name="champion"
               defaultValue={existingChampion ?? ''}
               disabled={locked}
-              className="flex-1 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white outline-none transition focus:border-zinc-500 disabled:opacity-50"
+              className="flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-white outline-none transition focus:border-white disabled:opacity-50"
             >
-              <option value="">Pick who wins it all…</option>
+              <option value="">Select a team…</option>
               {ALL_WC_TEAMS.map(t => (
                 <option key={t} value={t}>{t}</option>
               ))}
@@ -143,15 +146,12 @@ export default async function WCBracketPage({
             {!locked && (
               <button
                 type="submit"
-                className="shrink-0 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-black text-black hover:bg-yellow-300 transition"
+                className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-black hover:bg-zinc-200 transition"
               >
                 Save
               </button>
             )}
           </div>
-          {existingChampion && (
-            <p className="mt-2 text-xs text-yellow-600/80">Current pick: {existingChampion}</p>
-          )}
         </form>
 
         <form action={saveBracketPicks} className="space-y-4">
