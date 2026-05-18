@@ -248,6 +248,7 @@ export default async function TournamentPage({
                         tournamentId={id}
                         existing={predictionMap.get(fixture.id) ?? null}
                         locked={locked}
+                        maxScore={tournament.sport === 'basketball' ? 200 : 20}
                         username={username}
                         siteUrl={siteUrl}
                       />

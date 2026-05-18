@@ -25,9 +25,17 @@ export async function savePrediction(
     return { error: 'Predictions are locked for this fixture' }
   }
 
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('sport')
+    .eq('id', fixture.tournament_id)
+    .single()
+
+  const maxScore = tournament?.sport === 'basketball' ? 200 : 20
+
   if (
     !Number.isInteger(homeScore) || !Number.isInteger(awayScore) ||
-    homeScore < 0 || awayScore < 0 || homeScore > 20 || awayScore > 20
+    homeScore < 0 || awayScore < 0 || homeScore > maxScore || awayScore > maxScore
   ) {
     return { error: 'Invalid score' }
   }
