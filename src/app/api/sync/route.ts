@@ -149,9 +149,9 @@ async function syncFromSportsdb(leagueId: string, season: string, supabase: Retu
   ])
 
   const [nextData, lastData] = await Promise.all([
-    nextRes.ok ? nextRes.json().catch(() => ({})) : {},
-    lastRes.ok ? lastRes.json().catch(() => ({})) : {},
-  ])
+    nextRes.ok ? nextRes.json().catch(() => ({ events: [] })) : { events: [] },
+    lastRes.ok ? lastRes.json().catch(() => ({ events: [] })) : { events: [] },
+  ]) as [{ events?: SportsdbEvent[] }, { events?: SportsdbEvent[] }]
   const seen = new Set<string>()
   const events: SportsdbEvent[] = [...(lastData.events ?? []), ...(nextData.events ?? [])].filter(e => {
     if (seen.has(e.idEvent)) return false
