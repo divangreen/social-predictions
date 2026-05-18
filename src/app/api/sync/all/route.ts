@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const LEAGUES = [
-  { league_id: '4429', season: '2026',      label: 'FIFA World Cup 2026' },
-  { league_id: '4480', season: '2025-2026', label: 'UEFA Champions League' },
-  { league_id: '4328', season: '2025-2026', label: 'English Premier League' },
-  { league_id: '4335', season: '2025-2026', label: 'Spanish La Liga' },
-  { league_id: '4387', season: '2025-2026', label: 'NBA' },
+  { league_id: '4429', season: '2026',      label: 'FIFA World Cup 2026' },    // TheSportsDB
+  { league_id: 'CL',   season: '2025-2026', label: 'UEFA Champions League' },  // football-data.org
+  { league_id: 'PL',   season: '2025-2026', label: 'English Premier League' }, // football-data.org
+  { league_id: 'PD',   season: '2025-2026', label: 'Spanish La Liga' },        // football-data.org
+  { league_id: '4387', season: '2025-2026', label: 'NBA' },                    // TheSportsDB
 ]
 
 export async function GET(request: NextRequest) {
