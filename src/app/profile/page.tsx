@@ -21,88 +21,86 @@ export default async function ProfilePage() {
   const accuracy = scored.length > 0 ? Math.round((correct / scored.length) * 100) : 0
   const leagueCount = leagues?.length ?? 0
 
-  const recent = [...allPredictions]
+  const recentScored = [...scored]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 20)
+    .slice(0, 8)
 
-  const fixtureIds = recent.map(p => p.fixture_id)
+  const fixtureIds = recentScored.map(p => p.fixture_id)
   const { data: fixtures } = fixtureIds.length
     ? await supabase.from('fixtures').select('id, home_team_name, away_team_name, home_score, away_score, kickoff_time').in('id', fixtureIds)
     : { data: [] }
 
   const fixtureMap = new Map((fixtures ?? []).map(f => [f.id, f]))
-
   const username = profile?.username ?? user.email?.split('@')[0] ?? 'User'
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
 
         <div className="mb-6">
-          <Link href="/tournaments" className="text-sm text-zinc-500 hover:text-zinc-300">
+          <Link href="/tournaments" className="text-sm text-fg-3 transition hover:text-fg-2">
             ← Tournaments
           </Link>
         </div>
 
         {/* Profile card */}
-        <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <div className="mb-5 flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-2xl font-black text-white">
+        <div className="mb-6 rounded-2xl border border-border bg-surface-1 p-6">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-2 text-2xl font-black text-fg-1">
               {username[0]?.toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-black text-white">{username}</h1>
-              <p className="truncate text-sm text-zinc-500">{user.email}</p>
+              <h1 className="truncate text-xl font-black text-fg-1">{username}</h1>
+              <p className="truncate text-sm text-fg-3">{user.email}</p>
             </div>
           </div>
 
+          {/* Stats scoreboard */}
           <div className="grid grid-cols-4 gap-2">
             {([
-              { label: 'Points', value: String(totalPoints) },
-              { label: 'Accuracy', value: `${accuracy}%` },
-              { label: 'Picks', value: String(allPredictions.length) },
-              { label: 'Leagues', value: String(leagueCount) },
+              { label: 'Points', value: String(totalPoints), highlight: true },
+              { label: 'Accuracy', value: `${accuracy}%`, highlight: false },
+              { label: 'Picks', value: String(allPredictions.length), highlight: false },
+              { label: 'Leagues', value: String(leagueCount), highlight: false },
             ] as const).map(stat => (
-              <div key={stat.label} className="rounded-xl bg-zinc-800 p-3 text-center">
-                <p className="text-xl font-black text-white">{stat.value}</p>
-                <p className="mt-0.5 text-[10px] text-zinc-500">{stat.label}</p>
+              <div key={stat.label} className="rounded-xl bg-surface-2 p-3 text-center">
+                <p className={`font-mono text-xl font-black ${stat.highlight ? 'text-gold' : 'text-fg-1'}`}>
+                  {stat.value}
+                </p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-fg-3">{stat.label}</p>
               </div>
             ))}
           </div>
 
           {perfectScores > 0 && (
-            <p className="mt-4 text-center text-sm text-zinc-400">
+            <p className="mt-4 text-center text-sm font-bold text-goal">
               🎯 {perfectScores} perfect {perfectScores === 1 ? 'score' : 'scores'}
             </p>
           )}
         </div>
 
-        {/* Recent predictions */}
-        {recent.length > 0 ? (
+        {/* Recent results */}
+        {recentScored.length > 0 ? (
           <>
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Recent picks</h2>
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">Recent Results</h2>
             <div className="space-y-2">
-              {recent.map(pred => {
+              {recentScored.map(pred => {
                 const fixture = fixtureMap.get(pred.fixture_id)
                 if (!fixture) return null
-                const isScored = pred.points_earned !== null
                 const pts = pred.points_earned ?? 0
                 return (
-                  <div key={pred.id} className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+                  <div key={pred.id} className="flex items-center gap-3 rounded-2xl border border-border bg-surface-1 px-4 py-3">
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-semibold text-white">
-                        {fixture.home_team_name} vs {fixture.away_team_name}
+                      <p className="truncate text-sm font-bold text-fg-1">
+                        {fixture.home_team_name} {fixture.home_score}–{fixture.away_score} {fixture.away_team_name}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="font-mono text-xs text-fg-3">
                         My pick: {pred.predicted_home_score}–{pred.predicted_away_score}
-                        {isScored && ` · Result: ${fixture.home_score}–${fixture.away_score}`}
                         {pred.is_perfect && ' · 🎯'}
                       </p>
                     </div>
-                    <span className={`shrink-0 text-sm font-black ${
-                      !isScored ? 'text-zinc-500' : pts > 0 ? 'text-green-400' : 'text-zinc-600'
-                    }`}>
-                      {!isScored ? 'Pending' : pts > 0 ? `+${pts}` : '—'}
+                    <span className={`shrink-0 font-mono text-sm font-black ${pts > 0 ? 'text-goal' : 'text-fg-3'}`}>
+                      {pts > 0 ? `+${pts}` : '—'}
                     </span>
                   </div>
                 )
@@ -110,9 +108,9 @@ export default async function ProfilePage() {
             </div>
           </>
         ) : (
-          <div className="rounded-2xl border border-zinc-800 p-8 text-center">
-            <p className="mb-3 text-zinc-400">No predictions yet.</p>
-            <Link href="/tournaments" className="text-sm font-semibold text-white underline underline-offset-2">
+          <div className="rounded-2xl border border-border bg-surface-1 p-10 text-center">
+            <p className="mb-3 text-fg-2">No results yet.</p>
+            <Link href="/tournaments" className="text-sm font-bold text-fg-1 underline underline-offset-2">
               Make your first prediction →
             </Link>
           </div>

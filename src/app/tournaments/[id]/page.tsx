@@ -27,7 +27,6 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     (predictions ?? []).map(p => [p.fixture_id, p])
   )
 
-  // Group fixtures by stage
   type FixtureRow = NonNullable<typeof fixtures>[number]
   const stages = Array.from(
     (fixtures ?? []).reduce((acc, f) => {
@@ -38,30 +37,41 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   )
 
   const now = new Date()
+  const isLive = tournament.status === 'active'
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
 
         {/* Header */}
         <div className="mb-6">
-          <Link href="/tournaments" className="mb-3 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
-            ← Tournaments
+          <Link href="/tournaments" className="mb-4 inline-flex items-center gap-1 text-sm text-fg-3 transition hover:text-fg-2">
+            ← Back
           </Link>
-          <h1 className="text-2xl font-black tracking-tight text-white">{tournament.name}</h1>
-          <p className="text-sm capitalize text-zinc-500">{tournament.sport}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-fg-1">{tournament.name}</h1>
+              <p className="mt-0.5 text-sm capitalize text-fg-3">{tournament.sport}</p>
+            </div>
+            {isLive && (
+              <span className="mt-1 flex shrink-0 items-center gap-1.5 rounded-full bg-live/10 px-3 py-1 text-xs font-bold text-live">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live" />
+                Live
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Fixtures by stage */}
+        {/* Fixtures */}
         {!fixtures?.length ? (
-          <div className="rounded-2xl border border-zinc-800 p-8 text-center">
-            <p className="text-zinc-400">No fixtures yet.</p>
+          <div className="rounded-2xl border border-border bg-surface-1 p-10 text-center">
+            <p className="text-fg-2">No fixtures yet.</p>
           </div>
         ) : (
           <div className="space-y-8">
             {stages.map(([stage, stageFixtures]) => (
               <div key={stage}>
-                <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">{stage}</h2>
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">{stage}</h2>
                 <div className="space-y-3">
                   {stageFixtures!.map(fixture => {
                     const locked = fixture.status !== 'scheduled' || new Date(fixture.kickoff_time) <= now
