@@ -4,12 +4,29 @@ import Link from 'next/link'
 import { WC2026_GROUPS, WC_LOCK_DATE, WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
 import { saveBracketPicks } from './actions'
 import ShareBracketButton from '../_components/ShareBracketButton'
+import { saveChampionPick } from '../knockout/actions'
+import type { KnockoutPicks } from '@/lib/wc2026-bracket'
 
 const ERRORS: Record<string, string> = {
   locked: 'Predictions are locked — the tournament has started.',
   invalid: 'Please pick a winner and runner-up for each group.',
   save_failed: 'Something went wrong. Try again.',
 }
+
+const ALL_WC_TEAMS = [
+  'USA','Panama','El Salvador','Costa Rica',
+  'Mexico','Ecuador','Jamaica','Venezuela',
+  'Canada','Morocco','Croatia','Belgium',
+  'Argentina','Chile','Peru','Australia',
+  'Brazil','Paraguay','Colombia','Cameroon',
+  'France','Uruguay','Iran','Senegal',
+  'Spain','Turkey','Serbia','Japan',
+  'England','Nigeria','Albania','Algeria',
+  'Germany','Saudi Arabia','South Korea','Ukraine',
+  'Portugal','Czech Republic','Tunisia','New Zealand',
+  'Netherlands','Qatar','South Africa','Honduras',
+  'Switzerland','Bosnia-Herzegovina','Poland','Ghana',
+].sort()
 
 function daysUntil(date: Date) {
   return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000))
@@ -18,25 +35,33 @@ function daysUntil(date: Date) {
 export default async function WCBracketPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; saved?: string }>
+  searchParams: Promise<{ error?: string; saved?: string; saved_champion?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { error, saved } = await searchParams
+  const { error, saved, saved_champion } = await searchParams
   const locked = new Date() >= WC_LOCK_DATE
   const daysLeft = daysUntil(WC_LOCK_DATE)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://social-predictions.vercel.app'
 
-  const [{ data: existing }, { data: profile }] = await Promise.all([
+  const [{ data: existing }, { data: profile }, { data: knockoutRow }] = await Promise.all([
     supabase
       .from('bracket_predictions')
       .select('group_letter, first_place, second_place')
       .eq('user_id', user.id)
       .eq('tournament_id', WC_TOURNAMENT_ID),
     supabase.from('users').select('username').eq('id', user.id).single(),
+    supabase
+      .from('knockout_picks')
+      .select('picks')
+      .eq('user_id', user.id)
+      .eq('tournament_id', WC_TOURNAMENT_ID)
+      .single(),
   ])
+
+  const existingChampion = (knockoutRow?.picks as unknown as KnockoutPicks | null)?.champion ?? null
 
   const picksMap = new Map(existing?.map(r => [r.group_letter, r]) ?? [])
   const hasPicks = (picksMap.size ?? 0) > 0
@@ -93,6 +118,41 @@ export default async function WCBracketPage({
             ✓ Picks saved! {hasPicks ? 'Good luck.' : ''}
           </p>
         )}
+
+        {saved_champion && (
+          <p className="mb-4 rounded-xl bg-green-500/10 px-4 py-3 text-sm text-green-400">
+            ✓ Champion pick saved!
+          </p>
+        )}
+
+        {/* Champion pick */}
+        <form action={saveChampionPick} className="mb-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+          <p className="mb-3 text-xs font-black uppercase tracking-widest text-yellow-600">Champion</p>
+          <div className="flex gap-2">
+            <select
+              name="champion"
+              defaultValue={existingChampion ?? ''}
+              disabled={locked}
+              className="flex-1 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white outline-none transition focus:border-zinc-500 disabled:opacity-50"
+            >
+              <option value="">Pick who wins it all…</option>
+              {ALL_WC_TEAMS.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            {!locked && (
+              <button
+                type="submit"
+                className="shrink-0 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-black text-black hover:bg-yellow-300 transition"
+              >
+                Save
+              </button>
+            )}
+          </div>
+          {existingChampion && (
+            <p className="mt-2 text-xs text-yellow-600/80">Current pick: {existingChampion}</p>
+          )}
+        </form>
 
         <form action={saveBracketPicks} className="space-y-4">
           {WC2026_GROUPS.map(group => {
