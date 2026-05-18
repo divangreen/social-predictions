@@ -11,11 +11,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: tournament }, { data: fixtures }, { data: predictions }] = await Promise.all([
+  const [{ data: tournament }, { data: fixtures }, { data: predictions }, { data: profile }] = await Promise.all([
     supabase.from('tournaments').select('*').eq('id', id).single(),
     supabase.from('fixtures').select('*').eq('tournament_id', id).order('kickoff_time'),
     supabase.from('predictions').select('*').eq('user_id', user.id),
+    supabase.from('users').select('username').eq('id', user.id).single(),
   ])
+
+  const username = profile?.username ?? user.email?.split('@')[0] ?? 'predictr'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   if (!tournament) notFound()
 
@@ -68,6 +72,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                         tournamentId={id}
                         existing={predictionMap.get(fixture.id) ?? null}
                         locked={locked}
+                        username={username}
+                        siteUrl={siteUrl}
                       />
                     )
                   })}

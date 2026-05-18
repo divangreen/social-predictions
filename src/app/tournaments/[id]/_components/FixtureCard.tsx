@@ -4,25 +4,35 @@ import { useState } from 'react'
 import { savePrediction } from '../actions'
 import type { Fixture, Prediction } from '@/types/database'
 
-async function shareResult(fixture: Fixture, pred: Prediction, onCopied: () => void) {
-  const actual = `${fixture.home_score}–${fixture.away_score}`
-  const myPick = `${pred.predicted_home_score}–${pred.predicted_away_score}`
+async function shareResult(
+  fixture: Fixture,
+  pred: Prediction,
+  username: string,
+  siteUrl: string,
+  onCopied: () => void
+) {
   const pts = pred.points_earned ?? 0
-  const lines = [
-    `⚽ ${fixture.home_team_name} ${actual} ${fixture.away_team_name}`,
-    pred.is_perfect
-      ? `🎯 I predicted the exact score — ${myPick}!`
-      : pts > 0
-        ? `✅ I called the result (picked ${myPick})`
-        : `My pick was ${myPick}`,
-    `+${pts} pts on predictr`,
-  ]
-  const text = lines.join('\n')
+  const params = new URLSearchParams({
+    home: fixture.home_team_name,
+    away: fixture.away_team_name,
+    hs: String(fixture.home_score ?? pred.predicted_home_score),
+    as: String(fixture.away_score ?? pred.predicted_away_score),
+    u: username,
+    pts: String(pts),
+    p: pred.is_perfect ? '1' : '0',
+  })
+  const url = `${siteUrl}/share/prediction?${params}`
+  const text = pred.is_perfect
+    ? `🎯 I predicted the exact score! ${fixture.home_team_name} ${fixture.home_score}–${fixture.away_score} ${fixture.away_team_name} on predictr`
+    : pts > 0
+    ? `✅ I called it! ${fixture.home_team_name} vs ${fixture.away_team_name} — picked ${pred.predicted_home_score}–${pred.predicted_away_score} (+${pts} pts)`
+    : `My prediction for ${fixture.home_team_name} vs ${fixture.away_team_name} on predictr`
+
   try {
     if (navigator.share) {
-      await navigator.share({ text })
+      await navigator.share({ title: 'My predictr pick', text, url })
     } else {
-      await navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(url)
       onCopied()
     }
   } catch { /* user cancelled or browser denied */ }
@@ -33,6 +43,8 @@ interface Props {
   tournamentId: string
   existing: Prediction | null
   locked: boolean
+  username: string
+  siteUrl: string
 }
 
 function ScoreButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
@@ -47,7 +59,7 @@ function ScoreButton({ onClick, children }: { onClick: () => void; children: Rea
   )
 }
 
-export default function FixtureCard({ fixture, tournamentId, existing, locked }: Props) {
+export default function FixtureCard({ fixture, tournamentId, existing, locked, username, siteUrl }: Props) {
   const [home, setHome] = useState(existing?.predicted_home_score ?? 0)
   const [away, setAway] = useState(existing?.predicted_away_score ?? 0)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -72,7 +84,7 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
 
   function handleShare() {
     if (!existing) return
-    shareResult(fixture, existing, () => {
+    shareResult(fixture, existing, username, siteUrl, () => {
       setShareStatus('copied')
       setTimeout(() => setShareStatus('idle'), 2000)
     })
