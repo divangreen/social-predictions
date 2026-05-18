@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CopyInviteButton } from './_components/CopyInviteButton'
 import { PredictionFeed, type FeedItem } from './_components/PredictionFeed'
+import { AdminPanel } from './_components/AdminPanel'
 
 const FEED_EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
 
@@ -25,7 +26,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
   if (!user) redirect('/login')
 
   const [{ data: league }, { data: members }] = await Promise.all([
-    supabase.from('leagues').select('id, name, invite_code, tournament_id').eq('id', id).single(),
+    supabase.from('leagues').select('id, name, invite_code, tournament_id, created_by').eq('id', id).single(),
     supabase.from('league_members').select('user_id').eq('league_id', id),
   ])
 
@@ -132,7 +133,17 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           <Link href="/tournaments" className="mb-4 inline-flex items-center gap-1 text-sm text-fg-3 transition hover:text-fg-2">
             ← Tournaments
           </Link>
-          <h1 className="text-2xl font-black tracking-tight text-fg-1">{league.name}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black tracking-tight text-fg-1">{league.name}</h1>
+            {league.created_by === user.id && (
+              <AdminPanel
+                leagueId={id}
+                leagueName={league.name}
+                members={leaderboard.map(e => ({ userId: e.userId, username: e.username }))}
+                currentUserId={user.id}
+              />
+            )}
+          </div>
           {tournament?.name && <p className="text-sm text-fg-3">{tournament.name}</p>}
         </div>
 
