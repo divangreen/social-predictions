@@ -148,7 +148,10 @@ async function syncFromSportsdb(leagueId: string, season: string, supabase: Retu
     fetch(`https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id=${leagueId}`, { next: { revalidate: 0 } }),
   ])
 
-  const [nextData, lastData] = await Promise.all([nextRes.json(), lastRes.json()])
+  const [nextData, lastData] = await Promise.all([
+    nextRes.ok ? nextRes.json().catch(() => ({})) : {},
+    lastRes.ok ? lastRes.json().catch(() => ({})) : {},
+  ])
   const seen = new Set<string>()
   const events: SportsdbEvent[] = [...(lastData.events ?? []), ...(nextData.events ?? [])].filter(e => {
     if (seen.has(e.idEvent)) return false
