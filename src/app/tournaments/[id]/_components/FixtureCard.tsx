@@ -156,13 +156,31 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked }:
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
                 <ScoreButton onClick={() => setHome(h => Math.max(0, h - 1))}>−</ScoreButton>
-                <span className="w-7 text-center font-mono text-2xl font-black text-fg-1">{home}</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={home}
+                  onChange={e => {
+                    const v = parseInt(e.target.value)
+                    if (!isNaN(v)) setHome(Math.min(20, Math.max(0, v)))
+                  }}
+                  className="w-9 rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
                 <ScoreButton onClick={() => setHome(h => Math.min(20, h + 1))}>+</ScoreButton>
               </div>
               <span className="text-fg-3">–</span>
               <div className="flex items-center gap-1.5">
                 <ScoreButton onClick={() => setAway(a => Math.max(0, a - 1))}>−</ScoreButton>
-                <span className="w-7 text-center font-mono text-2xl font-black text-fg-1">{away}</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={away}
+                  onChange={e => {
+                    const v = parseInt(e.target.value)
+                    if (!isNaN(v)) setAway(Math.min(20, Math.max(0, v)))
+                  }}
+                  className="w-9 rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
                 <ScoreButton onClick={() => setAway(a => Math.min(20, a + 1))}>+</ScoreButton>
               </div>
             </div>
