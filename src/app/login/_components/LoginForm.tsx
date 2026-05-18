@@ -3,7 +3,11 @@
 import { useState } from 'react'
 import { sendMagicLink } from '../actions'
 
-export default function LoginForm() {
+const URL_ERROR_MESSAGES: Record<string, string> = {
+  missing_token: 'That sign-in link has expired. Enter your email to get a fresh one.',
+}
+
+export default function LoginForm({ urlError }: { urlError: string | null }) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -28,6 +32,12 @@ export default function LoginForm() {
           <h1 className="text-4xl font-black tracking-tight text-white">predictr</h1>
           <p className="mt-2 text-sm text-zinc-400">Predict. Compete. Brag.</p>
         </div>
+
+        {urlError && status === 'idle' && (
+          <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
+            {URL_ERROR_MESSAGES[urlError] ?? 'Something went wrong. Please try again.'}
+          </div>
+        )}
 
         {status === 'sent' ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-center">
