@@ -41,9 +41,14 @@ export default async function WCBracketPage({
     <main className="min-h-screen bg-black px-4 py-8">
       <div className="mx-auto max-w-lg">
 
-        <Link href="/tournaments" className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
-          ← Tournaments
-        </Link>
+        <div className="mb-4 flex items-center justify-between">
+          <Link href="/tournaments" className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
+            ← Tournaments
+          </Link>
+          <Link href="/world-cup/leaderboard" className="text-sm font-bold text-zinc-400 hover:text-white transition">
+            Leaderboard →
+          </Link>
+        </div>
 
         {/* Header */}
         <div className="mb-6">
