@@ -3,16 +3,23 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { LogoutButton } from '../tournaments/_components/LogoutButton'
 import { computeStreak } from '@/lib/streak'
+import { computeBadges } from '@/lib/badges'
+import { WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: profile }, { data: predictions }, { data: leagues }] = await Promise.all([
+  const [{ data: profile }, { data: predictions }, { data: leagues }, { count: wcGroupCount }] = await Promise.all([
     supabase.from('users').select('*').eq('id', user.id).single(),
     supabase.from('predictions').select('*').eq('user_id', user.id),
     supabase.from('league_members').select('league_id').eq('user_id', user.id),
+    supabase
+      .from('bracket_predictions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('tournament_id', WC_TOURNAMENT_ID),
   ])
 
   const allPredictions = predictions ?? []
@@ -23,6 +30,8 @@ export default async function ProfilePage() {
   const accuracy = scored.length > 0 ? Math.round((correct / scored.length) * 100) : 0
   const leagueCount = leagues?.length ?? 0
   const streak = computeStreak(allPredictions)
+  const badges = computeBadges(allPredictions, wcGroupCount ?? 0)
+  const earnedBadges = badges.filter(b => b.earned)
 
   const recentScored = [...scored]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -92,6 +101,35 @@ export default async function ProfilePage() {
           {perfectScores > 0 && (
             <p className="mt-4 text-center text-sm font-bold text-goal">
               🎯 {perfectScores} perfect {perfectScores === 1 ? 'score' : 'scores'}
+            </p>
+          )}
+        </div>
+
+        {/* Badges */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-fg-3">Badges</h2>
+            <span className="text-xs text-fg-3">{earnedBadges.length}/{badges.length}</span>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {badges.map(badge => (
+              <div
+                key={badge.id}
+                title={badge.earned ? badge.description : `Locked: ${badge.description}`}
+                className={`flex flex-col items-center gap-1 rounded-xl p-3 text-center transition ${
+                  badge.earned
+                    ? 'bg-surface-1 border border-border'
+                    : 'bg-surface-1 border border-border opacity-30 grayscale'
+                }`}
+              >
+                <span className="text-2xl">{badge.emoji}</span>
+                <p className="text-[10px] font-bold leading-tight text-fg-2">{badge.name}</p>
+              </div>
+            ))}
+          </div>
+          {earnedBadges.length === 0 && (
+            <p className="mt-3 text-center text-xs text-fg-3">
+              Make predictions to unlock badges
             </p>
           )}
         </div>
