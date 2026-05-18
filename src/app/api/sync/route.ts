@@ -54,6 +54,18 @@ interface SportsdbEvent {
   intRound: string | null
 }
 
+interface BdlGame {
+  id: number
+  date: string
+  status: string
+  period: number
+  home_team: { full_name: string; abbreviation: string }
+  visitor_team: { full_name: string; abbreviation: string }
+  home_team_score: number
+  visitor_team_score: number
+  postseason: boolean
+}
+
 interface FdMatch {
   id: number
   competition: { name: string }
@@ -216,6 +228,97 @@ async function syncFromSportsdb(leagueId: string, season: string, supabase: Retu
   return { synced, total: fixtures.length, tournament: first.strLeague }
 }
 
+// ─── BallDontLie NBA sync ─────────────────────────────────────────────────────
+
+function bdlIdToUuid(id: number): string {
+  return `00000000-0000-0002-0000-${String(id).padStart(12, '0')}`
+}
+
+function normalizeBdlStatus(status: string, period: number): 'scheduled' | 'live' | 'completed' {
+  if (status === 'Final' || status === 'Final/OT') return 'completed'
+  if (period > 0) return 'live'
+  return 'scheduled'
+}
+
+async function syncFromBalldontlie(season: string, supabase: ReturnType<typeof makeSupabase>) {
+  const apiKey = process.env.BALLDONTLIE_API_KEY
+  if (!apiKey) throw new Error('BALLDONTLIE_API_KEY not set')
+
+  // BDL season = start year (e.g. "2025" from "2025-2026")
+  const seasonYear = season.split('-')[0]
+
+  const now = new Date()
+  const dateFrom = new Date(now); dateFrom.setDate(dateFrom.getDate() - 30)
+  const dateTo = new Date(now); dateTo.setDate(dateTo.getDate() + 60)
+  const fmt = (d: Date) => d.toISOString().split('T')[0]
+
+  let allGames: BdlGame[] = []
+  let cursor: number | null = null
+
+  do {
+    const url = new URL('https://api.balldontlie.io/v1/games')
+    url.searchParams.set('seasons[]', seasonYear)
+    url.searchParams.set('start_date', fmt(dateFrom))
+    url.searchParams.set('end_date', fmt(dateTo))
+    url.searchParams.set('per_page', '100')
+    if (cursor) url.searchParams.set('cursor', String(cursor))
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: apiKey },
+      next: { revalidate: 0 },
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`balldontlie ${res.status}: ${text}`)
+    }
+
+    const data = await res.json()
+    allGames = allGames.concat(data.data ?? [])
+    cursor = data.meta?.next_cursor ?? null
+  } while (cursor)
+
+  if (!allGames.length) return { synced: 0, total: 0, tournament: 'NBA' }
+
+  const hasLive = allGames.some(g => normalizeBdlStatus(g.status, g.period) === 'live')
+  const hasUpcoming = allGames.some(g => normalizeBdlStatus(g.status, g.period) === 'scheduled')
+  const hasCompleted = allGames.some(g => normalizeBdlStatus(g.status, g.period) === 'completed')
+  const tournamentStatus = hasLive ? 'active' : (hasUpcoming && hasCompleted) ? 'active' : hasUpcoming ? 'upcoming' : 'completed'
+
+  await supabase.from('tournaments').upsert(
+    { id: 'nba', name: 'NBA', sport: 'basketball', status: tournamentStatus },
+    { onConflict: 'id' }
+  )
+
+  const fixtures = allGames.map(g => {
+    const status = normalizeBdlStatus(g.status, g.period)
+    return {
+      id: bdlIdToUuid(g.id),
+      tournament_id: 'nba',
+      home_team_name: g.home_team.full_name,
+      away_team_name: g.visitor_team.full_name,
+      home_team_logo: null,
+      away_team_logo: null,
+      kickoff_time: g.date,
+      status,
+      home_score: status === 'completed' ? g.home_team_score : null,
+      away_score: status === 'completed' ? g.visitor_team_score : null,
+      stage: g.postseason ? 'Playoffs' : 'Regular Season',
+      is_underdog_home: false,
+      is_underdog_away: false,
+    }
+  })
+
+  const BATCH = 50
+  let synced = 0
+  for (let i = 0; i < fixtures.length; i += BATCH) {
+    const { error } = await supabase.from('fixtures').upsert(fixtures.slice(i, i + BATCH), { onConflict: 'id' })
+    if (!error) synced += Math.min(BATCH, fixtures.length - i)
+  }
+
+  return { synced, total: fixtures.length, tournament: 'NBA' }
+}
+
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -238,10 +341,14 @@ export async function GET(request: NextRequest) {
   const supabase = makeSupabase()
 
   try {
-    // Alphabetic IDs → football-data.org; numeric IDs → TheSportsDB
-    const result = /^\d+$/.test(leagueId)
-      ? await syncFromSportsdb(leagueId, season, supabase)
-      : await syncFromFootballData(leagueId, supabase)
+    let result
+    if (leagueId === 'nba') {
+      result = await syncFromBalldontlie(season, supabase)
+    } else if (/^\d+$/.test(leagueId)) {
+      result = await syncFromSportsdb(leagueId, season, supabase)
+    } else {
+      result = await syncFromFootballData(leagueId, supabase)
+    }
 
     return NextResponse.json({ ok: true, ...result, season })
   } catch (e) {

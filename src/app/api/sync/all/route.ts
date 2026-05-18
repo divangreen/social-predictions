@@ -5,7 +5,7 @@ const LEAGUES = [
   { league_id: 'CL',   season: '2025-2026', label: 'UEFA Champions League' },  // football-data.org
   { league_id: 'PL',   season: '2025-2026', label: 'English Premier League' }, // football-data.org
   { league_id: 'PD',   season: '2025-2026', label: 'Spanish La Liga' },        // football-data.org
-  { league_id: '4387', season: '2025-2026', label: 'NBA' },                    // TheSportsDB
+  { league_id: 'nba',  season: '2025-2026', label: 'NBA' },                    // balldontlie.io
 ]
 
 export async function GET(request: NextRequest) {
