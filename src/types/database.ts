@@ -285,6 +285,29 @@ export type Database = {
         }
         Relationships: []
       }
+      knockout_picks: {
+        Row: {
+          id: string
+          user_id: string
+          tournament_id: string
+          picks: Record<string, unknown>
+          points_earned: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          tournament_id: string
+          picks: Record<string, unknown>
+          points_earned?: number | null
+          created_at?: string
+        }
+        Update: {
+          picks?: Record<string, unknown>
+          points_earned?: number | null
+        }
+        Relationships: []
+      }
       bracket_predictions: {
         Row: {
           id: string
