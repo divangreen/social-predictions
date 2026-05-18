@@ -127,6 +127,7 @@ export default async function WCBracketPage({
 
         {/* Champion pick */}
         <form action={saveChampionPick} className="mb-6 rounded-2xl border-2 border-white bg-zinc-900 p-4">
+          <input type="hidden" name="redirect_to" value="/world-cup/bracket" />
           <p className="mb-1 text-base font-black text-white">Who wins the World Cup?</p>
           <p className="mb-3 text-xs text-zinc-400">
             {existingChampion ? `Your pick: ${existingChampion}` : 'Pick your champion'}

@@ -31,16 +31,17 @@ export async function saveKnockoutPicks(picks: KnockoutPicks) {
 }
 
 export async function saveChampionPick(formData: FormData) {
-  if (new Date() >= WC_LOCK_DATE) redirect('/world-cup/bracket?error=locked')
+  const redirectTo = (formData.get('redirect_to') as string) || `/tournaments/${WC_TOURNAMENT_ID}`
+
+  if (new Date() >= WC_LOCK_DATE) redirect(`${redirectTo}?error=locked`)
 
   const champion = formData.get('champion') as string
-  if (!champion) redirect('/world-cup/bracket?error=invalid')
+  if (!champion) redirect(`${redirectTo}?error=no_champion`)
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Load existing knockout picks so we don't overwrite the bracket
   const { data: existing } = await supabase
     .from('knockout_picks')
     .select('picks')
@@ -58,6 +59,6 @@ export async function saveChampionPick(formData: FormData) {
       { onConflict: 'user_id,tournament_id' }
     )
 
-  if (error) redirect('/world-cup/bracket?error=save_failed')
-  redirect('/world-cup/bracket?saved_champion=1')
+  if (error) redirect(`${redirectTo}?error=save_failed`)
+  redirect(`${redirectTo}?saved_champion=1`)
 }

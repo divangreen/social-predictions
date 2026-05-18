@@ -7,8 +7,15 @@ import { WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
 import { saveChampionPick } from '@/app/world-cup/knockout/actions'
 import type { KnockoutPicks } from '@/lib/wc2026-bracket'
 
-export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TournamentPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ saved_champion?: string; error?: string }>
+}) {
   const { id } = await params
+  const { saved_champion, error: spError } = await searchParams
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -95,8 +102,19 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         {/* World Cup prediction hub */}
         {id === WC_TOURNAMENT_ID && (
           <div className="mb-6 space-y-2">
+            {saved_champion && (
+              <p className="rounded-xl bg-green-500/10 px-4 py-2 text-sm text-green-400">Champion pick saved!</p>
+            )}
+            {spError === 'no_champion' && (
+              <p className="rounded-xl bg-red-500/10 px-4 py-2 text-sm text-red-400">Please select a team first.</p>
+            )}
+            {spError === 'save_failed' && (
+              <p className="rounded-xl bg-red-500/10 px-4 py-2 text-sm text-red-400">Something went wrong. Try again.</p>
+            )}
+
             {/* Champion pick */}
             <form action={saveChampionPick} className="rounded-2xl border-2 border-white bg-zinc-900 p-4">
+              <input type="hidden" name="redirect_to" value={`/tournaments/${id}`} />
               <p className="mb-1 text-base font-black text-white">Who wins the World Cup?</p>
               <p className="mb-3 text-xs text-zinc-400">
                 {existingChampion ? `Your pick: ${existingChampion}` : 'Pick your champion'}
