@@ -51,6 +51,12 @@ export default async function TournamentsPage() {
             <p className="text-sm text-zinc-500">Pick your scores. Beat your mates.</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/profile"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-800 text-sm font-black text-white transition hover:bg-zinc-700"
+            >
+              {(user.email?.[0] ?? '?').toUpperCase()}
+            </Link>
             <LogoutButton />
             <Link
               href="/leagues/new"

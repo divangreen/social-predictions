@@ -21,12 +21,11 @@ export default async function ProfilePage() {
   const accuracy = scored.length > 0 ? Math.round((correct / scored.length) * 100) : 0
   const leagueCount = leagues?.length ?? 0
 
-  // Recent scored predictions with fixture details
-  const recentScored = [...scored]
+  const recent = [...allPredictions]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 8)
+    .slice(0, 20)
 
-  const fixtureIds = recentScored.map(p => p.fixture_id)
+  const fixtureIds = recent.map(p => p.fixture_id)
   const { data: fixtures } = fixtureIds.length
     ? await supabase.from('fixtures').select('id, home_team_name, away_team_name, home_score, away_score, kickoff_time').in('id', fixtureIds)
     : { data: [] }
@@ -78,28 +77,32 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        {/* Recent results */}
-        {recentScored.length > 0 ? (
+        {/* Recent predictions */}
+        {recent.length > 0 ? (
           <>
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Recent Results</h2>
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Recent picks</h2>
             <div className="space-y-2">
-              {recentScored.map(pred => {
+              {recent.map(pred => {
                 const fixture = fixtureMap.get(pred.fixture_id)
                 if (!fixture) return null
+                const isScored = pred.points_earned !== null
                 const pts = pred.points_earned ?? 0
                 return (
                   <div key={pred.id} className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-semibold text-white">
-                        {fixture.home_team_name} {fixture.home_score}–{fixture.away_score} {fixture.away_team_name}
+                        {fixture.home_team_name} vs {fixture.away_team_name}
                       </p>
                       <p className="text-xs text-zinc-500">
                         My pick: {pred.predicted_home_score}–{pred.predicted_away_score}
+                        {isScored && ` · Result: ${fixture.home_score}–${fixture.away_score}`}
                         {pred.is_perfect && ' · 🎯'}
                       </p>
                     </div>
-                    <span className={`shrink-0 text-sm font-black ${pts > 0 ? 'text-green-400' : 'text-zinc-600'}`}>
-                      {pts > 0 ? `+${pts}` : '—'}
+                    <span className={`shrink-0 text-sm font-black ${
+                      !isScored ? 'text-zinc-500' : pts > 0 ? 'text-green-400' : 'text-zinc-600'
+                    }`}>
+                      {!isScored ? 'Pending' : pts > 0 ? `+${pts}` : '—'}
                     </span>
                   </div>
                 )
@@ -108,7 +111,7 @@ export default async function ProfilePage() {
           </>
         ) : (
           <div className="rounded-2xl border border-zinc-800 p-8 text-center">
-            <p className="mb-3 text-zinc-400">No results yet.</p>
+            <p className="mb-3 text-zinc-400">No predictions yet.</p>
             <Link href="/tournaments" className="text-sm font-semibold text-white underline underline-offset-2">
               Make your first prediction →
             </Link>
