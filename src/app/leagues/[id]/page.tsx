@@ -86,14 +86,16 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
     .slice(0, 20)
 
   const feedPredictionIds = feedPredictions.map(p => p.id)
-  const { data: reactionsData } = feedPredictionIds.length
-    ? await supabase.from('reactions').select('prediction_id, user_id, emoji').in('prediction_id', feedPredictionIds)
-    : Promise.resolve({ data: [] })
+  let reactionsData: { prediction_id: string; user_id: string; emoji: string }[] = []
+  if (feedPredictionIds.length) {
+    const { data } = await supabase.from('reactions').select('prediction_id, user_id, emoji').in('prediction_id', feedPredictionIds)
+    reactionsData = data ?? []
+  }
 
   const feedItems: FeedItem[] = feedPredictions.map(p => {
     const fixture = fixtureMap.get(p.fixture_id)
     const u = userMap.get(p.user_id)
-    const predReactions = (reactionsData ?? []).filter(r => r.prediction_id === p.id)
+    const predReactions = reactionsData.filter(r => r.prediction_id === p.id)
     return {
       id: p.id,
       userId: p.user_id,
