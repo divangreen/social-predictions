@@ -41,7 +41,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       memberIds.length
         ? supabase.from('users').select('id, username, avatar_url').in('id', memberIds)
         : Promise.resolve({ data: [] }),
-      supabase.from('fixtures').select('id, home_team_name, away_team_name').eq('tournament_id', tournamentId),
+      supabase.from('fixtures').select('id, home_team_name, away_team_name, ai_banter').eq('tournament_id', tournamentId),
       memberIds.length
         ? supabase.from('predictions')
             .select('id, user_id, fixture_id, predicted_home_score, predicted_away_score, points_earned, is_perfect, created_at')
@@ -52,6 +52,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
 
   const fixtureSet = new Set((tournamentFixtures ?? []).map(f => f.id))
   const fixtureMap = new Map((tournamentFixtures ?? []).map(f => [f.id, f]))
+  const seenFixtures = new Set<string>()
 
   type LeaderboardEntry = {
     userId: string
@@ -90,6 +91,8 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
     const fixture = fixtureMap.get(p.fixture_id)
     const u = userMap.get(p.user_id)
     const predReactions = reactionsData.filter(r => r.prediction_id === p.id)
+    const isFirstForFixture = !seenFixtures.has(p.fixture_id)
+    if (isFirstForFixture) seenFixtures.add(p.fixture_id)
     return {
       id: p.id,
       userId: p.user_id,
@@ -99,6 +102,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       predictedHome: p.predicted_home_score,
       predictedAway: p.predicted_away_score,
       createdAt: p.created_at,
+      banter: isFirstForFixture ? (fixture?.ai_banter ?? null) : null,
       reactions: FEED_EMOJIS.map(e => ({
         emoji: e,
         count: predReactions.filter(r => r.emoji === e).length,

@@ -114,6 +114,7 @@ export type Database = {
           home_score: number | null
           away_score: number | null
           stage: string
+          ai_banter: string | null
         }
         Insert: {
           id?: string
@@ -129,6 +130,7 @@ export type Database = {
           home_score?: number | null
           away_score?: number | null
           stage: string
+          ai_banter?: string | null
         }
         Update: {
           id?: string
@@ -144,6 +146,7 @@ export type Database = {
           home_score?: number | null
           away_score?: number | null
           stage?: string
+          ai_banter?: string | null
         }
         Relationships: []
       }

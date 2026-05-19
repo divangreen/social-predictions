@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/admin'
 import { revalidatePath } from 'next/cache'
+import { generateFixtureBanter } from '@/lib/banter'
 
 function getResult(home: number, away: number): 'home' | 'draw' | 'away' {
   if (home > away) return 'home'
@@ -111,6 +112,35 @@ export async function saveFixtureResult(
         .eq('id', userId)
     })
   )
+
+  // Generate AI banter — fire-and-forget, never blocks the scoring result
+  const userIds = updates.map(u => u.user_id)
+  const { data: userRows } = await supabase
+    .from('users')
+    .select('id, username')
+    .in('id', userIds)
+
+  const usernameMap = new Map((userRows ?? []).map(u => [u.id, u.username ?? 'Unknown']))
+
+  const banterPredictions = updates.map(u => ({
+    username: usernameMap.get(u.user_id) ?? 'Unknown',
+    predictedHome: predictions.find(p => p.id === u.id)!.predicted_home_score,
+    predictedAway: predictions.find(p => p.id === u.id)!.predicted_away_score,
+    correct: u.points_earned > 0,
+    perfect: u.is_perfect,
+  }))
+
+  generateFixtureBanter(
+    fixture.home_team_name,
+    fixture.away_team_name,
+    homeScore,
+    awayScore,
+    banterPredictions
+  ).then(banter => {
+    if (banter) {
+      supabase.from('fixtures').update({ ai_banter: banter }).eq('id', fixtureId)
+    }
+  })
 
   revalidatePath('/admin/fixtures')
   revalidatePath(`/tournaments/${fixture.tournament_id}`)

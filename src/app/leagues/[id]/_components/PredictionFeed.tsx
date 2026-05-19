@@ -15,6 +15,7 @@ export type FeedItem = {
   predictedHome: number
   predictedAway: number
   createdAt: string
+  banter: string | null
   reactions: { emoji: Emoji; count: number; byMe: boolean }[]
 }
 
@@ -122,6 +123,12 @@ export function PredictionFeed({
     <div className="space-y-3">
       {items.map(item => (
         <div key={item.id} className="rounded-2xl border border-border bg-surface-1 p-4">
+          {item.banter && (
+            <div className="mb-3 rounded-xl bg-surface-2 px-3 py-2">
+              <p className="text-xs font-bold text-fg-3">🤖 predictr AI</p>
+              <p className="mt-0.5 text-sm italic text-fg-2">&ldquo;{item.banter}&rdquo;</p>
+            </div>
+          )}
           <div className="mb-2 flex items-center gap-2">
             <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-fg-1">
               {item.username[0]?.toUpperCase()}
