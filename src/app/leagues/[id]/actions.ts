@@ -82,20 +82,14 @@ export async function addMember(
 ): Promise<{ error: string } | void> {
   const { supabase } = await assertAdmin(leagueId)
 
-  const { data: existing } = await supabase
-    .from('league_members')
-    .select('user_id')
-    .eq('league_id', leagueId)
-    .eq('user_id', targetUserId)
-    .single()
-
-  if (existing) return { error: 'User is already in this league' }
-
   const { error } = await supabase
     .from('league_members')
     .insert({ league_id: leagueId, user_id: targetUserId })
 
-  if (error) return { error: error.message }
+  if (error) {
+    if (error.code === '23505') return { error: 'User is already in this league' }
+    return { error: error.message }
+  }
 
   revalidatePath(`/leagues/${leagueId}`)
 }
