@@ -52,6 +52,8 @@ export default async function TournamentPage({
       : Promise.resolve({ data: null }),
   ])
 
+  // knockout_picks.picks is typed as Record<string,unknown> in the DB schema
+  // (Supabase can't express nested JSON shapes); cast to the app type here.
   const existingKnockout = knockoutRow?.picks as unknown as KnockoutPicks | null
   const existingChampion = existingKnockout?.champion ?? null
   const existingTopScorer = existingKnockout?.topScorer ?? null
@@ -143,24 +145,24 @@ export default async function TournamentPage({
             )}
 
             {/* Champion pick */}
-            <form action={saveChampionPick} className="rounded-2xl border-2 border-white bg-zinc-900 p-4">
+            <form action={saveChampionPick} className="rounded-2xl border-2 border-fg-1 bg-surface-1 p-4">
               <input type="hidden" name="redirect_to" value={`/tournaments/${id}`} />
-              <p className="mb-1 text-base font-black text-white">Who wins the World Cup?</p>
-              <p className="mb-3 text-xs text-zinc-400">
+              <p className="mb-1 text-base font-black text-fg-1">Who wins the World Cup?</p>
+              <p className="mb-3 text-xs text-fg-3">
                 {existingChampion ? `Your pick: ${existingChampion}` : 'Pick your champion'}
               </p>
               <div className="flex gap-2">
                 <select
                   name="champion"
                   defaultValue={existingChampion ?? ''}
-                  className="flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-white outline-none transition focus:border-white"
+                  className="flex-1 rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-fg-1 outline-none transition focus:border-fg-1"
                 >
                   <option value="">Select a team…</option>
                   {WC_TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 <button
                   type="submit"
-                  className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-black hover:bg-zinc-200 transition"
+                  className="shrink-0 rounded-xl bg-fg-1 px-4 py-2 text-xs font-black text-pitch hover:opacity-90 transition"
                 >
                   Save
                 </button>
@@ -168,24 +170,24 @@ export default async function TournamentPage({
             </form>
 
             {/* Top scorer pick */}
-            <form action={saveTopScorerPick} className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+            <form action={saveTopScorerPick} className="rounded-2xl border border-border bg-surface-1 p-4">
               <input type="hidden" name="redirect_to" value={`/tournaments/${id}`} />
-              <p className="mb-1 text-base font-black text-white">Top scorer?</p>
-              <p className="mb-3 text-xs text-zinc-400">
+              <p className="mb-1 text-base font-black text-fg-1">Top scorer?</p>
+              <p className="mb-3 text-xs text-fg-3">
                 {existingTopScorer ? `Your pick: ${existingTopScorer}` : 'Pick the golden boot winner'}
               </p>
               <div className="flex gap-2">
                 <select
                   name="top_scorer"
                   defaultValue={existingTopScorer ?? ''}
-                  className="flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-white outline-none transition focus:border-white"
+                  className="flex-1 rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-fg-1 outline-none transition focus:border-fg-1"
                 >
                   <option value="">Select a player…</option>
                   {WC_TOP_SCORERS.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
                 <button
                   type="submit"
-                  className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-black hover:bg-zinc-200 transition"
+                  className="shrink-0 rounded-xl bg-fg-1 px-4 py-2 text-xs font-black text-pitch hover:opacity-90 transition"
                 >
                   Save
                 </button>
@@ -196,34 +198,34 @@ export default async function TournamentPage({
             <div className="grid grid-cols-2 gap-2">
               <Link
                 href="/world-cup/bracket"
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/10"
+                className="flex items-center justify-between rounded-2xl border border-border bg-surface-1 px-4 py-3 transition hover:bg-surface-2"
               >
                 <div>
-                  <p className="text-sm font-black text-white">Group Stage</p>
-                  <p className="text-xs text-zinc-400">Pick 1st &amp; 2nd</p>
+                  <p className="text-sm font-black text-fg-1">Group Stage</p>
+                  <p className="text-xs text-fg-3">Pick 1st &amp; 2nd</p>
                 </div>
-                <span className="text-zinc-400">→</span>
+                <span className="text-fg-3">→</span>
               </Link>
               <Link
                 href="/world-cup/knockout"
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/10"
+                className="flex items-center justify-between rounded-2xl border border-border bg-surface-1 px-4 py-3 transition hover:bg-surface-2"
               >
                 <div>
-                  <p className="text-sm font-black text-white">Knockout</p>
-                  <p className="text-xs text-zinc-400">Full bracket + champion</p>
+                  <p className="text-sm font-black text-fg-1">Knockout</p>
+                  <p className="text-xs text-fg-3">Full bracket + champion</p>
                 </div>
-                <span className="text-zinc-400">→</span>
+                <span className="text-fg-3">→</span>
               </Link>
             </div>
             <Link
               href="/world-cup/leaderboard"
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/10"
+              className="flex items-center justify-between rounded-2xl border border-border bg-surface-1 px-4 py-3 transition hover:bg-surface-2"
             >
               <div>
-                <p className="text-sm font-black text-white">Leaderboard</p>
-                <p className="text-xs text-zinc-400">See who&apos;s winning</p>
+                <p className="text-sm font-black text-fg-1">Leaderboard</p>
+                <p className="text-xs text-fg-3">See who&apos;s winning</p>
               </div>
-              <span className="text-zinc-400">→</span>
+              <span className="text-fg-3">→</span>
             </Link>
           </div>
         )}

@@ -43,6 +43,9 @@ export function PredictionFeed({
       .channel(`feed-${leagueId}`)
       .on(
         'postgres_changes',
+        // No row-level filter here: Supabase Realtime doesn't support filtering
+        // on non-PK columns in free-tier. We receive all reaction events and
+        // discard those for predictions not in the current feed client-side.
         { event: '*', schema: 'public', table: 'reactions' },
         async (payload) => {
           const predictionId =
@@ -109,8 +112,8 @@ export function PredictionFeed({
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-zinc-800 p-6 text-center">
-        <p className="text-sm text-zinc-500">No predictions yet. Be the first to pick!</p>
+      <div className="rounded-2xl border border-border bg-surface-1 p-6 text-center">
+        <p className="text-sm text-fg-3">No predictions yet. Be the first to pick!</p>
       </div>
     )
   }
@@ -118,21 +121,21 @@ export function PredictionFeed({
   return (
     <div className="space-y-3">
       {items.map(item => (
-        <div key={item.id} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+        <div key={item.id} className="rounded-2xl border border-border bg-surface-1 p-4">
           <div className="mb-2 flex items-center gap-2">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-bold text-white">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-fg-1">
               {item.username[0]?.toUpperCase()}
             </div>
-            <span className="text-sm font-semibold text-white">{item.username}</span>
+            <span className="text-sm font-semibold text-fg-1">{item.username}</span>
             {item.userId === currentUserId && (
-              <span className="text-xs text-zinc-500">(you)</span>
+              <span className="text-xs text-fg-3">(you)</span>
             )}
-            <span className="ml-auto text-xs text-zinc-500">{formatTime(item.createdAt)}</span>
+            <span className="ml-auto text-xs text-fg-3">{formatTime(item.createdAt)}</span>
           </div>
 
-          <p className="mb-3 text-sm text-zinc-400">
+          <p className="mb-3 text-sm text-fg-3">
             {item.homeTeam}
-            <span className="mx-2 font-black text-white">
+            <span className="mx-2 font-black text-fg-1">
               {item.predictedHome} – {item.predictedAway}
             </span>
             {item.awayTeam}
@@ -145,8 +148,8 @@ export function PredictionFeed({
                 onClick={() => toggleReaction(item.id, r.emoji, r.byMe)}
                 className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm transition ${
                   r.byMe
-                    ? 'border border-white/20 bg-white/10 text-white'
-                    : 'border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
+                    ? 'border border-fg-1/20 bg-fg-1/10 text-fg-1'
+                    : 'border border-border text-fg-3 hover:border-fg-2 hover:text-fg-2'
                 }`}
               >
                 {r.emoji}

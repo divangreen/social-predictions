@@ -31,7 +31,7 @@ export async function deleteLeague(leagueId: string) {
   redirect('/tournaments')
 }
 
-export async function removeMember(leagueId: string, targetUserId: string) {
+export async function removeMember(leagueId: string, targetUserId: string): Promise<{ error: string } | void> {
   const { userId, supabase } = await assertAdmin(leagueId)
 
   if (targetUserId === userId) return { error: 'Cannot remove yourself' }
@@ -45,7 +45,7 @@ export async function removeMember(leagueId: string, targetUserId: string) {
   revalidatePath(`/leagues/${leagueId}`)
 }
 
-export async function renameLeague(leagueId: string, name: string) {
+export async function renameLeague(leagueId: string, name: string): Promise<{ error: string } | void> {
   const { supabase } = await assertAdmin(leagueId)
 
   const trimmed = name.trim()
@@ -56,9 +56,11 @@ export async function renameLeague(leagueId: string, name: string) {
   revalidatePath(`/leagues/${leagueId}`)
 }
 
-export async function regenerateInvite(leagueId: string) {
+export async function regenerateInvite(leagueId: string): Promise<void> {
   const { supabase } = await assertAdmin(leagueId)
 
+  // Math.random is sufficient here — invite codes are 6-char convenience links,
+  // not security tokens; a proper CSPRNG would be overkill.
   const invite_code = Math.random().toString(36).substring(2, 8).toUpperCase()
   await supabase.from('leagues').update({ invite_code }).eq('id', leagueId)
 

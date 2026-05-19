@@ -61,6 +61,10 @@ export interface MatchDetails {
 
 type Source = 'fd' | 'sportsdb' | 'bdl' | 'unknown'
 
+// Fixture UUIDs embed the data source in the third segment (variant field):
+//   0000 → TheSportsDB   0001 → football-data.org   0002 → BallDontLie
+// This lets us route detail requests without a separate provider column.
+// See the UUID helpers in src/app/api/sync/route.ts for the encoding side.
 export function decodeFixtureId(uuid: string): { source: Source; externalId: number } {
   const parts = uuid.split('-')
   const variant = parts[2]
@@ -317,7 +321,9 @@ async function fetchBdlDetails(gameId: number): Promise<MatchDetails> {
     nbaHomePlayers: homePlayers,
     nbaAwayPlayers: awayPlayers,
     nbaTeamStats,
-    // Store abbreviations for tab labels
+    // _homeAbbr/_awayAbbr are unused by current callers; the NBA tab labels use
+    // the full team names passed in from the fixture row instead. Left in place
+    // to avoid a breaking change if a future caller wants abbreviations.
     ...({ _homeAbbr: homeAbbr, _awayAbbr: awayAbbr } as object),
   }
 }

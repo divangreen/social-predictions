@@ -8,7 +8,7 @@ export async function savePrediction(
   tournamentId: string,
   homeScore: number,
   awayScore: number
-) {
+): Promise<{ error: string | null }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -21,6 +21,8 @@ export async function savePrediction(
     .single()
 
   if (!fixture) return { error: 'Fixture not found' }
+  // Lock at kickoff rather than a fixed offset so last-minute postponements
+  // (status stays 'scheduled') still block predictions once the clock passes.
   if (fixture.status !== 'scheduled' || new Date(fixture.kickoff_time) <= new Date()) {
     return { error: 'Predictions are locked for this fixture' }
   }
@@ -31,6 +33,8 @@ export async function savePrediction(
     .eq('id', fixture.tournament_id)
     .single()
 
+  // Basketball scores routinely exceed 100; 200 is a generous upper bound that
+  // still catches obvious typos (no football match ever reaches 200).
   const maxScore = tournament?.sport === 'basketball' ? 200 : 20
 
   if (

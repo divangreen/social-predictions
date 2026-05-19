@@ -103,10 +103,10 @@ export function getThirdPlaceCandidates(
 ): { group: string; teams: string[] }[] {
   return WC2026_GROUPS.map(g => {
     const pick = groupPicks.get(g.letter)
-    if (!pick) return { group: g.letter, teams: g.teams as unknown as string[] }
+    if (!pick) return { group: g.letter, teams: [...g.teams] }
     return {
       group: g.letter,
-      teams: (g.teams as unknown as string[]).filter(t => t !== pick.first_place && t !== pick.second_place),
+      teams: g.teams.filter(t => t !== pick.first_place && t !== pick.second_place),
     }
   })
 }

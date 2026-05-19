@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/types/database'
 
 // ─── UUID helpers ────────────────────────────────────────────────────────────
+// Fixtures from different providers share the same table. We encode the source
+// in UUID variant field (position 3, zero-indexed) so decodeFixtureId() in
+// match-details.ts can route detail requests back to the correct API without
+// storing a separate "source" column:
+//   0000 → TheSportsDB   0001 → football-data.org   0002 → BallDontLie (NBA)
 
 function sportsdbIdToUuid(idEvent: string): string {
   return `00000000-0000-0000-0000-${idEvent.padStart(12, '0')}`
@@ -230,6 +235,7 @@ async function syncFromSportsdb(leagueId: string, season: string, supabase: Retu
 
 // ─── BallDontLie NBA sync ─────────────────────────────────────────────────────
 
+// variant 0002 → BallDontLie; mirrors the 0000/0001 scheme above
 function bdlIdToUuid(id: number): string {
   return `00000000-0000-0002-0000-${String(id).padStart(12, '0')}`
 }
@@ -277,7 +283,7 @@ async function syncFromBalldontlie(season: string, supabase: ReturnType<typeof m
   const apiKey = process.env.BALLDONTLIE_API_KEY
   if (!apiKey) throw new Error('BALLDONTLIE_API_KEY not set')
 
-  // BDL season = start year (e.g. "2025" from "2025-2026")
+  // BDL uses the start year only; "2025-2026" → "2025"
   const seasonYear = season.split('-')[0]
 
   const now = new Date()

@@ -14,7 +14,7 @@ export async function saveFixtureResult(
   fixtureId: string,
   homeScore: number,
   awayScore: number
-) {
+): Promise<{ error: string | null; scored?: number }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !isAdmin(user.id)) return { error: 'Unauthorized' }
@@ -26,7 +26,6 @@ export async function saveFixtureResult(
     return { error: 'Invalid score' }
   }
 
-  // Update fixture
   const { data: fixture, error: fixtureError } = await supabase
     .from('fixtures')
     .update({ home_score: homeScore, away_score: awayScore, status: 'completed' })
@@ -36,7 +35,8 @@ export async function saveFixtureResult(
 
   if (fixtureError || !fixture) return { error: fixtureError?.message ?? 'Failed to update fixture' }
 
-  // Fetch all predictions for this fixture (including existing points to compute delta on re-score)
+  // Fetch existing points_earned so we can calculate the delta below — this
+  // supports admin re-scoring (score correction) without double-counting.
   const { data: predictions } = await supabase
     .from('predictions')
     .select('id, user_id, predicted_home_score, predicted_away_score, points_earned')
@@ -52,7 +52,10 @@ export async function saveFixtureResult(
     (actualResult === 'home' && fixture.is_underdog_home) ||
     (actualResult === 'away' && fixture.is_underdog_away)
 
-  // Score each prediction
+  // Scoring rules:
+  //   3 pts — exact scoreline (e.g. 2-1 predicted, 2-1 actual)
+  //   1 pt  — correct result only (home win / draw / away win)
+  //  +1 pt  — bonus when the underdog team wins (flagged per-fixture by admin)
   const updates = predictions.map(p => {
     const exactMatch =
       p.predicted_home_score === homeScore &&
@@ -84,7 +87,8 @@ export async function saveFixtureResult(
     )
   )
 
-  // Apply point deltas (new - old) per user to prevent double-increment on re-score
+  // Use (newPoints − oldPoints) per user so re-scoring a fixture applies only
+  // the difference rather than adding points on top of a previous scoring pass.
   const deltaByUser = new Map<string, number>()
   updates.forEach(u => {
     const oldPts = predictions.find(p => p.id === u.id)?.points_earned ?? 0
@@ -95,14 +99,15 @@ export async function saveFixtureResult(
   await Promise.all(
     Array.from(deltaByUser.entries()).map(async ([userId, delta]) => {
       if (delta === 0) return
-      const { data: currentUser } = await supabase
+      const { data: userRow } = await supabase
         .from('users')
         .select('total_points')
         .eq('id', userId)
         .single()
+      // Math.max(0) prevents the total going negative if scores are corrected downward
       return supabase
         .from('users')
-        .update({ total_points: Math.max(0, (currentUser?.total_points ?? 0) + delta) })
+        .update({ total_points: Math.max(0, (userRow?.total_points ?? 0) + delta) })
         .eq('id', userId)
     })
   )

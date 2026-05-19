@@ -29,6 +29,11 @@ export default async function AdminWCPage() {
     if (!preds?.length) return
 
     for (const pred of preds) {
+      // Group-stage scoring:
+      //   5 pts — correct group winner
+      //   3 pts — correct runner-up
+      //   1 pt  — picked the right team but in the wrong position
+      // delta pattern mirrors saveFixtureResult so re-scoring is idempotent.
       const newPts =
         (pred.first_place === actual_first ? 5 : 0) +
         (pred.second_place === actual_second ? 3 : 0) +
@@ -43,50 +48,50 @@ export default async function AdminWCPage() {
         .eq('id', pred.id)
 
       if (delta !== 0) {
-        const { data: u } = await supabaseAdmin
+        const { data: userRow } = await supabaseAdmin
           .from('users')
           .select('total_points')
           .eq('id', pred.user_id)
           .single()
         await supabaseAdmin
           .from('users')
-          .update({ total_points: Math.max(0, (u?.total_points ?? 0) + delta) })
+          .update({ total_points: Math.max(0, (userRow?.total_points ?? 0) + delta) })
           .eq('id', pred.user_id)
       }
     }
   }
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
-        <Link href="/tournaments" className="mb-6 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/tournaments" className="mb-6 inline-flex items-center gap-1 text-sm text-fg-3 hover:text-fg-2">
           ← Tournaments
         </Link>
-        <h1 className="mb-6 text-2xl font-black text-white">Score WC Groups</h1>
-        <p className="mb-6 text-sm text-zinc-500">Enter actual group results to award points. 5pts correct winner, 3pts correct runner-up, 1pt each if teams placed in wrong position.</p>
+        <h1 className="mb-6 text-2xl font-black text-fg-1">Score WC Groups</h1>
+        <p className="mb-6 text-sm text-fg-3">Enter actual group results to award points. 5pts correct winner, 3pts correct runner-up, 1pt each if teams placed in wrong position.</p>
 
         <div className="space-y-3">
           {WC2026_GROUPS.map(group => (
-            <form key={group.letter} action={scoreGroup} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+            <form key={group.letter} action={scoreGroup} className="rounded-2xl border border-border bg-surface-1 p-4">
               <input type="hidden" name="letter" value={group.letter} />
-              <p className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-500">Group {group.letter}</p>
+              <p className="mb-3 text-xs font-black uppercase tracking-widest text-fg-3">Group {group.letter}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-zinc-400">Actual Winner</label>
-                  <select name="actual_first" className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white outline-none">
+                  <label className="mb-1 block text-xs font-semibold text-fg-2">Actual Winner</label>
+                  <select name="actual_first" className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-fg-1 outline-none">
                     <option value="">Select…</option>
                     {group.teams.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-zinc-400">Actual Runner-up</label>
-                  <select name="actual_second" className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white outline-none">
+                  <label className="mb-1 block text-xs font-semibold text-fg-2">Actual Runner-up</label>
+                  <select name="actual_second" className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-fg-1 outline-none">
                     <option value="">Select…</option>
                     {group.teams.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
               </div>
-              <button type="submit" className="mt-3 w-full rounded-xl bg-white py-2 text-xs font-bold text-black hover:bg-zinc-200">
+              <button type="submit" className="mt-3 w-full rounded-xl bg-fg-1 py-2 text-xs font-bold text-pitch hover:opacity-90">
                 Score Group {group.letter}
               </button>
             </form>
