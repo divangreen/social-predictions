@@ -341,6 +341,11 @@ export type Database = {
       }
     }
     Views: { [_ in never]: never }
-    Functions: { [_ in never]: never }
+    Functions: {
+      increment_user_points: {
+        Args: { p_user_id: string; p_delta: number }
+        Returns: void
+      }
+    }
   }
 }
