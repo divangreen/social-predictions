@@ -4,19 +4,9 @@ import Link from 'next/link'
 import { CopyInviteButton } from './_components/CopyInviteButton'
 import { PredictionFeed, type FeedItem } from './_components/PredictionFeed'
 import { AdminPanel } from './_components/AdminPanel'
+import { RealtimeLeaderboard, type LeaderboardEntry } from './_components/RealtimeLeaderboard'
 
 const FEED_EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
-
-function Avatar({ username, avatarUrl }: { username: string; avatarUrl: string | null }) {
-  if (avatarUrl) {
-    return <img src={avatarUrl} alt={username} className="h-9 w-9 rounded-full object-cover" />
-  }
-  return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-fg-1">
-      {username[0]?.toUpperCase()}
-    </div>
-  )
-}
 
 export default async function LeaguePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -53,15 +43,6 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
   const fixtureSet = new Set((tournamentFixtures ?? []).map(f => f.id))
   const fixtureMap = new Map((tournamentFixtures ?? []).map(f => [f.id, f]))
   const seenFixtures = new Set<string>()
-
-  type LeaderboardEntry = {
-    userId: string
-    username: string
-    avatarUrl: string | null
-    points: number
-    predictionsMade: number
-    perfectScores: number
-  }
 
   const statsMap = new Map<string, { points: number; made: number; perfect: number }>()
   ;(predictions ?? [])
@@ -168,39 +149,12 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
 
         {/* Leaderboard */}
         <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">Leaderboard</h2>
-        <div className="space-y-2">
-          {leaderboard.map((entry, i) => {
-            const rank = i + 1
-            const isMe = entry.userId === user.id
-            const rankLabel = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : String(rank)
-            return (
-              <div
-                key={entry.userId}
-                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
-                  isMe ? 'border-gold/20 bg-gold/5' : 'border-border bg-surface-1'
-                }`}
-              >
-                <span className="w-6 text-center text-sm font-black text-fg-3">{rankLabel}</span>
-                <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm font-bold text-fg-1">
-                    {entry.username}{isMe && <span className="ml-1 text-xs text-fg-3">(you)</span>}
-                  </p>
-                  <p className="font-mono text-xs text-fg-3">
-                    {entry.predictionsMade} picks{entry.perfectScores > 0 && ` · 🎯 ${entry.perfectScores}`}
-                  </p>
-                </div>
-                <span className="font-mono text-lg font-black text-gold">{entry.points}</span>
-              </div>
-            )
-          })}
-
-          {leaderboard.length === 0 && (
-            <div className="rounded-2xl border border-border bg-surface-1 p-8 text-center">
-              <p className="text-fg-2">No members yet. Share the invite link!</p>
-            </div>
-          )}
-        </div>
+        <RealtimeLeaderboard
+          initial={leaderboard}
+          currentUserId={user.id}
+          memberIds={memberIds}
+          tournamentId={tournamentId}
+        />
 
         <h2 className="mb-3 mt-8 text-xs font-bold uppercase tracking-widest text-fg-3">Prediction feed</h2>
         <PredictionFeed initial={feedItems} currentUserId={user.id} leagueId={id} />

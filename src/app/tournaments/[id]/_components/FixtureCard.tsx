@@ -96,6 +96,21 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked, m
   const isLive = fixture.status === 'live'
   const pts = existing?.points_earned ?? 0
 
+  const actualResult = fixture.home_score != null && fixture.away_score != null
+    ? fixture.home_score > fixture.away_score ? 'home'
+      : fixture.away_score > fixture.home_score ? 'away'
+      : 'draw'
+    : null
+  const isUnderdogWin =
+    (actualResult === 'home' && !!fixture.is_underdog_home) ||
+    (actualResult === 'away' && !!fixture.is_underdog_away)
+  const predictedResult = existing
+    ? existing.predicted_home_score > existing.predicted_away_score ? 'home'
+      : existing.predicted_away_score > existing.predicted_home_score ? 'away'
+      : 'draw'
+    : null
+  const gotUpsetBonus = isUnderdogWin && predictedResult !== null && predictedResult === actualResult
+
   const cardBorder = isScored && pts > 0
     ? 'border-goal/25'
     : isLive
@@ -232,6 +247,9 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked, m
               <p className="font-mono text-xs text-fg-3">
                 +{pts} pts · picked {existing.predicted_home_score}–{existing.predicted_away_score}
               </p>
+              {gotUpsetBonus && (
+                <p className="mt-0.5 text-xs font-bold text-gold">🗡️ +1 upset bonus</p>
+              )}
             </div>
             <button
               onClick={handleShare}
