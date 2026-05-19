@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { deleteLeague, removeMember, renameLeague, regenerateInvite } from '../actions'
+import { useState, useTransition, useRef } from 'react'
+import { deleteLeague, removeMember, renameLeague, regenerateInvite, searchUsers, addMember } from '../actions'
 
 interface Member {
   userId: string
@@ -22,6 +22,11 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<{ id: string; username: string }[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function flash(msg: string) {
     setFeedback(msg)
@@ -57,6 +62,32 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
       await deleteLeague(leagueId)
     })
   }
+
+  function handleSearchChange(value: string) {
+    setSearchQuery(value)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    if (value.trim().length < 2) { setSearchResults([]); return }
+    setIsSearching(true)
+    searchTimeout.current = setTimeout(async () => {
+      const results = await searchUsers(value)
+      setSearchResults(results)
+      setIsSearching(false)
+    }, 300)
+  }
+
+  function handleAdd(userId: string, username: string) {
+    startTransition(async () => {
+      const res = await addMember(leagueId, userId)
+      if (res?.error) flash(res.error)
+      else {
+        flash(`${username} added to league`)
+        setSearchQuery('')
+        setSearchResults([])
+      }
+    })
+  }
+
+  const memberIds = new Set(members.map(m => m.userId))
 
   return (
     <>
@@ -163,7 +194,51 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
 
             {/* Members tab */}
             {tab === 'members' && (
-              <div className="space-y-2">
+              <div className="space-y-3">
+
+                {/* User search */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold text-fg-3">Add by username</label>
+                  <input
+                    value={searchQuery}
+                    onChange={e => handleSearchChange(e.target.value)}
+                    placeholder="Search username…"
+                    className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-fg-1 outline-none focus:border-fg-2 placeholder:text-fg-3"
+                  />
+                  {isSearching && (
+                    <p className="mt-1 text-[10px] text-fg-3">Searching…</p>
+                  )}
+                  {searchResults.length > 0 && (
+                    <div className="mt-1 overflow-hidden rounded-xl border border-border bg-surface-2">
+                      {searchResults.map(u => (
+                        <div key={u.id} className="flex items-center justify-between px-3 py-2.5 border-b border-border last:border-b-0">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-1 text-[10px] font-bold text-fg-1">
+                              {u.username[0]?.toUpperCase()}
+                            </div>
+                            <span className="text-sm text-fg-1">{u.username}</span>
+                          </div>
+                          {memberIds.has(u.id) ? (
+                            <span className="text-[10px] font-bold text-fg-3">Already in league</span>
+                          ) : (
+                            <button
+                              onClick={() => handleAdd(u.id, u.username)}
+                              disabled={isPending}
+                              className="rounded-lg bg-fg-1 px-3 py-1 text-[10px] font-bold text-pitch transition hover:opacity-90 disabled:opacity-30"
+                            >
+                              Add
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
+                    <p className="mt-1 text-[10px] text-fg-3">No users found.</p>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-2">
                 {members.map(m => (
                   <div key={m.userId} className="flex items-center justify-between rounded-xl border border-border bg-surface-2 px-3 py-2.5">
                     <div className="flex items-center gap-2">
@@ -186,6 +261,7 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
                     )}
                   </div>
                 ))}
+                </div>
               </div>
             )}
 

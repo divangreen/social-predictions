@@ -80,13 +80,15 @@ describe('share page param parsing', () => {
   })
 
   it('pts defaults to 0 when missing', () => {
-    const pts = Number(undefined ?? 0)
+    const raw: string | undefined = undefined
+    const pts = Number(raw ?? 0)
     expect(pts).toBe(0)
   })
 
   it('perfect flag set when p=1', () => {
-    expect('1' === '1').toBe(true)
-    expect('0' === '1').toBe(false)
-    expect(undefined === '1').toBe(false)
+    const check = (p: string | undefined) => p === '1'
+    expect(check('1')).toBe(true)
+    expect(check('0')).toBe(false)
+    expect(check(undefined)).toBe(false)
   })
 })

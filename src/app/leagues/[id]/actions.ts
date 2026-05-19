@@ -56,6 +56,50 @@ export async function renameLeague(leagueId: string, name: string): Promise<{ er
   revalidatePath(`/leagues/${leagueId}`)
 }
 
+export async function searchUsers(
+  query: string
+): Promise<{ id: string; username: string }[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const trimmed = query.trim()
+  if (trimmed.length < 2) return []
+
+  const { data } = await supabase
+    .from('users')
+    .select('id, username')
+    .ilike('username', `%${trimmed}%`)
+    .neq('id', user.id)
+    .limit(8)
+
+  return data ?? []
+}
+
+export async function addMember(
+  leagueId: string,
+  targetUserId: string
+): Promise<{ error: string } | void> {
+  const { supabase } = await assertAdmin(leagueId)
+
+  const { data: existing } = await supabase
+    .from('league_members')
+    .select('user_id')
+    .eq('league_id', leagueId)
+    .eq('user_id', targetUserId)
+    .single()
+
+  if (existing) return { error: 'User is already in this league' }
+
+  const { error } = await supabase
+    .from('league_members')
+    .insert({ league_id: leagueId, user_id: targetUserId })
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/leagues/${leagueId}`)
+}
+
 export async function regenerateInvite(leagueId: string): Promise<void> {
   const { supabase } = await assertAdmin(leagueId)
 
