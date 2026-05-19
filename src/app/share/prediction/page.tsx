@@ -61,9 +61,9 @@ export default async function SharePredictionPage({ searchParams }: Props) {
             </p>
 
             <div className="mb-4 flex items-center gap-4">
-              <span className="text-7xl font-black text-white">{hs}</span>
+              <span className="max-w-20 truncate text-7xl font-black text-white">{hs}</span>
               <span className="text-4xl font-black text-zinc-600">–</span>
-              <span className="text-7xl font-black text-white">{as_}</span>
+              <span className="max-w-20 truncate text-7xl font-black text-white">{as_}</span>
             </div>
 
             <p className={`mb-1 text-lg font-bold ${perfect ? 'text-green-400' : pts > 0 ? 'text-green-400' : 'text-zinc-500'}`}>

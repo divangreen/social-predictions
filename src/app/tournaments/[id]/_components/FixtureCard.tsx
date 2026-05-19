@@ -5,25 +5,29 @@ import Link from 'next/link'
 import { savePrediction } from '../actions'
 import type { Fixture, Prediction } from '@/types/database'
 
-async function shareResult(fixture: Fixture, pred: Prediction, onCopied: () => void) {
-  const actual = `${fixture.home_score}–${fixture.away_score}`
-  const myPick = `${pred.predicted_home_score}–${pred.predicted_away_score}`
+async function shareResult(
+  fixture: Fixture,
+  pred: Prediction,
+  onCopied: () => void,
+  username: string,
+  siteUrl: string,
+) {
   const pts = pred.points_earned ?? 0
-  const lines = [
-    `⚽ ${fixture.home_team_name} ${actual} ${fixture.away_team_name}`,
-    pred.is_perfect
-      ? `🎯 I predicted the exact score — ${myPick}!`
-      : pts > 0
-        ? `✅ I called the result (picked ${myPick})`
-        : `My pick was ${myPick}`,
-    `+${pts} pts on predictr`,
-  ]
-  const text = lines.join('\n')
+  const params = new URLSearchParams({
+    home: fixture.home_team_name,
+    away: fixture.away_team_name,
+    hs: String(fixture.home_score ?? ''),
+    as: String(fixture.away_score ?? ''),
+    u: username,
+    pts: String(pts),
+    ...(pred.is_perfect ? { p: '1' } : {}),
+  })
+  const url = `${siteUrl}/share/prediction?${params.toString()}`
   try {
     if (navigator.share) {
-      await navigator.share({ text })
+      await navigator.share({ url, title: `${fixture.home_team_name} vs ${fixture.away_team_name} — predictr` })
     } else {
-      await navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(url)
       onCopied()
     }
   } catch { /* user cancelled or browser denied */ }
@@ -51,7 +55,7 @@ function ScoreButton({ onClick, children }: { onClick: () => void; children: Rea
   )
 }
 
-export default function FixtureCard({ fixture, tournamentId, existing, locked, maxScore = 20 }: Props) {
+export default function FixtureCard({ fixture, tournamentId, existing, locked, maxScore = 20, username = 'predictr', siteUrl = '' }: Props) {
   const [home, setHome] = useState(existing?.predicted_home_score ?? 0)
   const [away, setAway] = useState(existing?.predicted_away_score ?? 0)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -79,7 +83,7 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked, m
     shareResult(fixture, existing, () => {
       setShareStatus('copied')
       setTimeout(() => setShareStatus('idle'), 2000)
-    })
+    }, username, siteUrl)
   }
 
   const kickoff = new Date(fixture.kickoff_time)
@@ -165,7 +169,7 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked, m
                     const v = parseInt(e.target.value)
                     if (!isNaN(v)) setHome(Math.min(maxScore, Math.max(0, v)))
                   }}
-                  className="w-9 rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className={`${maxScore > 99 ? 'w-14' : 'w-9'} rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
                 />
                 <ScoreButton onClick={() => setHome(h => Math.min(maxScore, h + 1))}>+</ScoreButton>
               </div>
@@ -180,7 +184,7 @@ export default function FixtureCard({ fixture, tournamentId, existing, locked, m
                     const v = parseInt(e.target.value)
                     if (!isNaN(v)) setAway(Math.min(maxScore, Math.max(0, v)))
                   }}
-                  className="w-9 rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className={`${maxScore > 99 ? 'w-14' : 'w-9'} rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
                 />
                 <ScoreButton onClick={() => setAway(a => Math.min(maxScore, a + 1))}>+</ScoreButton>
               </div>

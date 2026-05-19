@@ -20,13 +20,6 @@ export async function saveFixtureResult(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !isAdmin(user.id)) return { error: 'Unauthorized' }
 
-  if (
-    !Number.isInteger(homeScore) || !Number.isInteger(awayScore) ||
-    homeScore < 0 || awayScore < 0 || homeScore > 20 || awayScore > 20
-  ) {
-    return { error: 'Invalid score' }
-  }
-
   const { data: fixture, error: fixtureError } = await supabase
     .from('fixtures')
     .update({ home_score: homeScore, away_score: awayScore, status: 'completed' })
@@ -35,6 +28,21 @@ export async function saveFixtureResult(
     .single()
 
   if (fixtureError || !fixture) return { error: fixtureError?.message ?? 'Failed to update fixture' }
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('sport')
+    .eq('id', fixture.tournament_id)
+    .single()
+  const maxScore = tournament?.sport === 'basketball' ? 200 : 20
+
+  if (
+    !Number.isInteger(homeScore) || !Number.isInteger(awayScore) ||
+    homeScore < 0 || awayScore < 0 || homeScore > maxScore || awayScore > maxScore
+  ) {
+    await supabase.from('fixtures').update({ home_score: null, away_score: null, status: 'scheduled' }).eq('id', fixtureId)
+    return { error: 'Invalid score' }
+  }
 
   // Fetch existing points_earned so we can calculate the delta below — this
   // supports admin re-scoring (score correction) without double-counting.
@@ -98,18 +106,9 @@ export async function saveFixtureResult(
   })
 
   await Promise.all(
-    Array.from(deltaByUser.entries()).map(async ([userId, delta]) => {
-      if (delta === 0) return
-      const { data: userRow } = await supabase
-        .from('users')
-        .select('total_points')
-        .eq('id', userId)
-        .single()
-      // Math.max(0) prevents the total going negative if scores are corrected downward
-      return supabase
-        .from('users')
-        .update({ total_points: Math.max(0, (userRow?.total_points ?? 0) + delta) })
-        .eq('id', userId)
+    Array.from(deltaByUser.entries()).map(([userId, delta]) => {
+      if (delta === 0) return Promise.resolve()
+      return supabase.rpc('increment_user_points', { p_user_id: userId, p_delta: delta })
     })
   )
 
@@ -138,9 +137,9 @@ export async function saveFixtureResult(
     banterPredictions
   ).then(banter => {
     if (banter) {
-      supabase.from('fixtures').update({ ai_banter: banter }).eq('id', fixtureId)
+      return supabase.from('fixtures').update({ ai_banter: banter }).eq('id', fixtureId)
     }
-  })
+  }).catch(console.error)
 
   revalidatePath('/admin/fixtures')
   revalidatePath(`/tournaments/${fixture.tournament_id}`)

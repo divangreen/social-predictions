@@ -7,13 +7,13 @@ import { redirect } from 'next/navigation'
 import { emptyKnockoutPicks } from '@/lib/wc2026-bracket'
 
 export async function saveKnockoutPicks(picks: KnockoutPicks) {
-  if (new Date() >= WC_LOCK_DATE) {
-    return { error: 'locked' }
-  }
-
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  if (new Date() >= WC_LOCK_DATE) {
+    return { error: 'locked' }
+  }
 
   const { error } = await supabase
     .from('knockout_picks')
@@ -33,14 +33,14 @@ export async function saveKnockoutPicks(picks: KnockoutPicks) {
 export async function saveChampionPick(formData: FormData) {
   const redirectTo = (formData.get('redirect_to') as string) || `/tournaments/${WC_TOURNAMENT_ID}`
 
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   if (new Date() >= WC_LOCK_DATE) redirect(`${redirectTo}?error=locked`)
 
   const champion = formData.get('champion') as string
   if (!champion) redirect(`${redirectTo}?error=no_champion`)
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const { data: existing } = await supabase
     .from('knockout_picks')
@@ -66,14 +66,14 @@ export async function saveChampionPick(formData: FormData) {
 export async function saveTopScorerPick(formData: FormData) {
   const redirectTo = (formData.get('redirect_to') as string) || `/tournaments/${WC_TOURNAMENT_ID}`
 
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   if (new Date() >= WC_LOCK_DATE) redirect(`${redirectTo}?error=locked`)
 
   const topScorer = formData.get('top_scorer') as string
   if (!topScorer) redirect(`${redirectTo}?error=no_top_scorer`)
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const { data: existing } = await supabase
     .from('knockout_picks')

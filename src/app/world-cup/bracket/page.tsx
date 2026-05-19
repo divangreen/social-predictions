@@ -35,13 +35,13 @@ function daysUntil(date: Date) {
 export default async function WCBracketPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; saved?: string; saved_champion?: string }>
+  searchParams: Promise<{ error?: string; saved?: string; saved_champion?: string; skipped?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { error, saved, saved_champion } = await searchParams
+  const { error, saved, saved_champion, skipped } = await searchParams
   const locked = new Date() >= WC_LOCK_DATE
   const daysLeft = daysUntil(WC_LOCK_DATE)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://social-predictions.vercel.app'
@@ -116,6 +116,12 @@ export default async function WCBracketPage({
         {saved && (
           <p className="mb-4 rounded-xl bg-green-500/10 px-4 py-3 text-sm text-green-400">
             ✓ Picks saved! {hasPicks ? 'Good luck.' : ''}
+          </p>
+        )}
+
+        {skipped && Number(skipped) > 0 && (
+          <p className="mb-4 rounded-xl bg-yellow-500/10 px-4 py-3 text-sm text-yellow-400">
+            {Number(skipped)} group{Number(skipped) > 1 ? 's were' : ' was'} not saved — pick different teams for 1st and 2nd in each group.
           </p>
         )}
 

@@ -48,15 +48,7 @@ export default async function AdminWCPage() {
         .eq('id', pred.id)
 
       if (delta !== 0) {
-        const { data: userRow } = await supabaseAdmin
-          .from('users')
-          .select('total_points')
-          .eq('id', pred.user_id)
-          .single()
-        await supabaseAdmin
-          .from('users')
-          .update({ total_points: Math.max(0, (userRow?.total_points ?? 0) + delta) })
-          .eq('id', pred.user_id)
+        await supabaseAdmin.rpc('increment_user_points', { p_user_id: pred.user_id, p_delta: delta })
       }
     }
   }
