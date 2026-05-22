@@ -8,7 +8,7 @@ const URL_ERROR_MESSAGES: Record<string, string> = {
   missing_token: 'That sign-in link has expired. Enter your email to get a fresh one.',
 }
 
-export default function LoginForm({ urlError }: { urlError: string | null }) {
+export default function LoginForm({ urlError, next }: { urlError: string | null; next: string | null }) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -17,18 +17,19 @@ export default function LoginForm({ urlError }: { urlError: string | null }) {
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
     const supabase = createClient()
+    const redirectTo = next
+      ? `${window.location.origin}/auth/confirm?next=${encodeURIComponent(next)}`
+      : `${window.location.origin}/auth/confirm`
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/confirm`,
-      },
+      options: { redirectTo },
     })
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setStatus('loading')
-    const { error } = await sendMagicLink(email)
+    const { error } = await sendMagicLink(email, next ?? undefined)
     if (error) {
       setErrorMsg(error)
       setStatus('error')

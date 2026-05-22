@@ -5,12 +5,12 @@ import LoginForm from './_components/LoginForm'
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; next?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/tournaments')
 
-  const { error } = await searchParams
-  return <LoginForm urlError={error ?? null} />
+  const { error, next } = await searchParams
+  return <LoginForm urlError={error ?? null} next={next ?? null} />
 }

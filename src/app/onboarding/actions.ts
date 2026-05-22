@@ -1,7 +1,10 @@
 'use server'
 
 import { createClient } from '@/lib/supabase-server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+
+const PENDING_INVITE_COOKIE = 'pending_invite'
 
 export async function saveUsername(formData: FormData) {
   const username = (formData.get('username') as string)?.trim()
@@ -18,7 +21,6 @@ export async function saveUsername(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Check uniqueness
   const { data: existing } = await supabase
     .from('users')
     .select('id')
@@ -34,6 +36,25 @@ export async function saveUsername(formData: FormData) {
     .eq('id', user.id)
 
   if (error) redirect(`/onboarding?error=save_failed`)
+
+  // Auto-join league if an invite was pending from the auth flow
+  const cookieStore = await cookies()
+  const inviteCode = cookieStore.get(PENDING_INVITE_COOKIE)?.value
+  if (inviteCode) {
+    cookieStore.delete(PENDING_INVITE_COOKIE)
+    const { data: league } = await supabase
+      .from('leagues')
+      .select('id')
+      .eq('invite_code', inviteCode)
+      .single()
+
+    if (league) {
+      await supabase
+        .from('league_members')
+        .upsert({ league_id: league.id, user_id: user.id }, { onConflict: 'league_id,user_id', ignoreDuplicates: true })
+      redirect(`/leagues/${league.id}`)
+    }
+  }
 
   redirect(next)
 }

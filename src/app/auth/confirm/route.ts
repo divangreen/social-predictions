@@ -2,6 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
 
+const PENDING_INVITE_COOKIE = 'pending_invite'
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
@@ -13,7 +15,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=missing_token', request.url))
   }
 
-  const response = NextResponse.redirect(new URL(next, request.url))
+  // Extract invite code from next param if it's a /join/ URL
+  const inviteCodeMatch = next.match(/^\/join\/([A-Z0-9]+)$/i)
+  const inviteCode = inviteCodeMatch?.[1]?.toUpperCase() ?? null
+
+  const defaultRedirect = inviteCode ? '/' : next
+  const response = NextResponse.redirect(new URL(defaultRedirect, request.url))
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,11 +40,9 @@ export async function GET(request: NextRequest) {
   let authError: string | null = null
 
   if (code) {
-    // PKCE flow — newer Supabase projects
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) authError = error.message
   } else if (token_hash && type) {
-    // OTP flow — older format
     const { error } = await supabase.auth.verifyOtp({ type, token_hash })
     if (error) authError = error.message
   }
@@ -48,30 +53,67 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Ensure user row exists in public.users; detect new signup for onboarding
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    const { data: existingProfile } = await supabase
-      .from('users')
+  if (!user) {
+    return NextResponse.redirect(new URL('/login?error=missing_token', request.url))
+  }
+
+  const { data: existingProfile } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', user.id)
+    .single()
+
+  const isNewUser = !existingProfile
+
+  await supabase.from('users').upsert(
+    { id: user.id, username: user.email!.split('@')[0] },
+    { onConflict: 'id', ignoreDuplicates: true }
+  )
+
+  // New user: redirect to onboarding; store invite code in cookie to pick up after
+  if (isNewUser) {
+    const onboardingRedirect = NextResponse.redirect(new URL('/onboarding', request.url))
+    response.cookies.getAll().forEach(({ name, value, ...rest }) => {
+      onboardingRedirect.cookies.set(name, value, rest as Parameters<typeof onboardingRedirect.cookies.set>[2])
+    })
+    if (inviteCode) {
+      onboardingRedirect.cookies.set(PENDING_INVITE_COOKIE, inviteCode, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 60 * 30, // 30 min
+      })
+    }
+    return onboardingRedirect
+  }
+
+  // Existing user with invite: auto-join and redirect to league
+  if (inviteCode) {
+    const { data: league } = await supabase
+      .from('leagues')
       .select('id')
-      .eq('id', user.id)
+      .eq('invite_code', inviteCode)
       .single()
 
-    const isNewUser = !existingProfile
+    if (league) {
+      await supabase
+        .from('league_members')
+        .upsert({ league_id: league.id, user_id: user.id }, { onConflict: 'league_id,user_id', ignoreDuplicates: true })
 
-    await supabase.from('users').upsert(
-      { id: user.id, username: user.email!.split('@')[0] },
-      { onConflict: 'id', ignoreDuplicates: true }
-    )
-
-    if (isNewUser) {
-      const onboardingRedirect = NextResponse.redirect(new URL('/onboarding', request.url))
+      const leagueRedirect = NextResponse.redirect(new URL(`/leagues/${league.id}`, request.url))
       response.cookies.getAll().forEach(({ name, value, ...rest }) => {
-        onboardingRedirect.cookies.set(name, value, rest as Parameters<typeof onboardingRedirect.cookies.set>[2])
+        leagueRedirect.cookies.set(name, value, rest as Parameters<typeof leagueRedirect.cookies.set>[2])
       })
-      return onboardingRedirect
+      return leagueRedirect
     }
   }
 
-  return response
+  // Default: redirect to next or /
+  const finalRedirect = inviteCode ? '/tournaments' : next
+  const finalResponse = NextResponse.redirect(new URL(finalRedirect, request.url))
+  response.cookies.getAll().forEach(({ name, value, ...rest }) => {
+    finalResponse.cookies.set(name, value, rest as Parameters<typeof finalResponse.cookies.set>[2])
+  })
+  return finalResponse
 }
