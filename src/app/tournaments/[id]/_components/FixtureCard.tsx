@@ -306,17 +306,35 @@ export default function FixtureCard({
                 : `${home} – ${away} · up to 5pts if exact`}
             </p>
 
-            <button
-              onClick={handleSave}
-              disabled={
-                status === 'saving' ||
-                (!isDirty && !!existing) ||
-                (pickMode === 'result' && !selectedResult)
-              }
-              className="rounded-full bg-fg-1 px-5 py-1.5 text-xs font-bold text-pitch transition hover:opacity-90 active:scale-95 disabled:opacity-30"
-            >
-              {status === 'saving' ? 'Saving…' : status === 'saved' ? '✓ Saved' : existing ? 'Update' : 'Save'}
-            </button>
+            {/* Sticky save button — floats above nav bar when prediction is dirty */}
+            <div className={isDirty && status !== 'saved' ? 'sticky bottom-20 z-10 pt-1' : ''}>
+              <button
+                onClick={handleSave}
+                disabled={
+                  status === 'saving' ||
+                  (!isDirty && !!existing) ||
+                  (pickMode === 'result' && !selectedResult)
+                }
+                className={`w-full rounded-full py-2.5 text-sm font-black transition active:scale-95 disabled:opacity-30 ${
+                  isDirty && status !== 'saved'
+                    ? 'bg-gold text-pitch shadow-lg shadow-gold/30 hover:opacity-90'
+                    : 'bg-fg-1 text-pitch hover:opacity-90'
+                }`}
+              >
+                {status === 'saving'
+                  ? 'Saving…'
+                  : status === 'saved'
+                  ? '✓ Saved'
+                  : isDirty
+                  ? `Lock in ${pickMode === 'result'
+                      ? selectedResult === 'home' ? fixture.home_team_name.split(' ')[0]
+                        : selectedResult === 'away' ? fixture.away_team_name.split(' ')[0]
+                        : selectedResult === 'draw' ? 'Draw'
+                        : '…'
+                      : `${home}–${away}`} →`
+                  : existing ? 'Update' : 'Save'}
+              </button>
+            </div>
 
             {status === 'error' && (
               <p className="text-center text-xs text-loss">{errorMsg}</p>
