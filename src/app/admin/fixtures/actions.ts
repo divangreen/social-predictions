@@ -4,12 +4,7 @@ import { createClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/admin'
 import { revalidatePath } from 'next/cache'
 import { generateFixtureBanter } from '@/lib/banter'
-
-function getResult(home: number, away: number): 'home' | 'draw' | 'away' {
-  if (home > away) return 'home'
-  if (home < away) return 'away'
-  return 'draw'
-}
+import { calcPoints, getResult } from '@/lib/scoring'
 
 export async function saveFixtureResult(
   fixtureId: string,
@@ -48,7 +43,7 @@ export async function saveFixtureResult(
   // supports admin re-scoring (score correction) without double-counting.
   const { data: predictions } = await supabase
     .from('predictions')
-    .select('id, user_id, predicted_home_score, predicted_away_score, points_earned')
+    .select('id, user_id, prediction_type, predicted_home_score, predicted_away_score, predicted_result, points_earned')
     .eq('fixture_id', fixtureId)
 
   if (!predictions?.length) {
@@ -61,27 +56,18 @@ export async function saveFixtureResult(
     (actualResult === 'home' && fixture.is_underdog_home) ||
     (actualResult === 'away' && fixture.is_underdog_away)
 
-  // Scoring rules:
-  //   3 pts — exact scoreline (e.g. 2-1 predicted, 2-1 actual)
-  //   1 pt  — correct result only (home win / draw / away win)
-  //  +1 pt  — bonus when the underdog team wins (flagged per-fixture by admin)
   const updates = predictions.map(p => {
-    const exactMatch =
-      p.predicted_home_score === homeScore &&
-      p.predicted_away_score === awayScore
-    const predictedResult = getResult(p.predicted_home_score, p.predicted_away_score)
-    const correctResult = predictedResult === actualResult
+    const pick = p.prediction_type === 'result'
+      ? { type: 'result' as const, predictedResult: (p.predicted_result ?? 'draw') as 'home' | 'draw' | 'away' }
+      : { type: 'score' as const, predictedHome: p.predicted_home_score ?? 0, predictedAway: p.predicted_away_score ?? 0 }
 
-    let points = 0
-    if (exactMatch) points = 3
-    else if (correctResult) points = 1
-    if (correctResult && isUnderdogWin) points += 1
+    const { points, isExact } = calcPoints(pick, homeScore, awayScore, !!isUnderdogWin)
 
     return {
       id: p.id,
       user_id: p.user_id,
       points_earned: points,
-      is_perfect: exactMatch,
+      is_perfect: isExact,
       status: 'scored' as const,
     }
   })

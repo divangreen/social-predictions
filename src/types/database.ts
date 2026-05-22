@@ -30,8 +30,10 @@ export interface Prediction {
   id: string
   user_id: string
   fixture_id: string
-  predicted_home_score: number
-  predicted_away_score: number
+  prediction_type: 'score' | 'result'
+  predicted_home_score: number | null
+  predicted_away_score: number | null
+  predicted_result: 'home' | 'draw' | 'away' | null
   status: PredictionStatus | null
   points_earned: number | null
   is_perfect: boolean | null
@@ -155,8 +157,10 @@ export type Database = {
           id: string
           user_id: string
           fixture_id: string
-          predicted_home_score: number
-          predicted_away_score: number
+          prediction_type: 'score' | 'result'
+          predicted_home_score: number | null
+          predicted_away_score: number | null
+          predicted_result: 'home' | 'draw' | 'away' | null
           status: 'pending' | 'scored' | 'void' | null
           points_earned: number | null
           is_perfect: boolean | null
@@ -166,8 +170,10 @@ export type Database = {
           id?: string
           user_id: string
           fixture_id: string
-          predicted_home_score: number
-          predicted_away_score: number
+          prediction_type?: string
+          predicted_home_score?: number | null
+          predicted_away_score?: number | null
+          predicted_result?: string | null
           status?: string | null
           points_earned?: number | null
           is_perfect?: boolean | null
@@ -177,8 +183,10 @@ export type Database = {
           id?: string
           user_id?: string
           fixture_id?: string
-          predicted_home_score?: number
-          predicted_away_score?: number
+          prediction_type?: string
+          predicted_home_score?: number | null
+          predicted_away_score?: number | null
+          predicted_result?: string | null
           status?: string | null
           points_earned?: number | null
           is_perfect?: boolean | null

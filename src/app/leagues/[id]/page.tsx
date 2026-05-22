@@ -34,7 +34,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       supabase.from('fixtures').select('id, home_team_name, away_team_name, ai_banter').eq('tournament_id', tournamentId),
       memberIds.length
         ? supabase.from('predictions')
-            .select('id, user_id, fixture_id, predicted_home_score, predicted_away_score, points_earned, is_perfect, created_at')
+            .select('id, user_id, fixture_id, prediction_type, predicted_home_score, predicted_away_score, predicted_result, points_earned, is_perfect, created_at')
             .in('user_id', memberIds)
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [] }),
@@ -80,8 +80,10 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       username: u?.username ?? 'Unknown',
       homeTeam: fixture?.home_team_name ?? '?',
       awayTeam: fixture?.away_team_name ?? '?',
+      predictionType: (p.prediction_type ?? 'score') as 'score' | 'result',
       predictedHome: p.predicted_home_score,
       predictedAway: p.predicted_away_score,
+      predictedResult: (p.predicted_result ?? null) as 'home' | 'draw' | 'away' | null,
       createdAt: p.created_at,
       banter: isFirstForFixture ? (fixture?.ai_banter ?? null) : null,
       reactions: FEED_EMOJIS.map(e => ({

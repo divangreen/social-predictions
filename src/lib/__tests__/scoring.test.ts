@@ -1,221 +1,152 @@
 import { describe, it, expect } from 'vitest'
-
-// Scoring logic mirrored from src/app/admin/fixtures/actions.ts
-function getResult(home: number, away: number): 'home' | 'draw' | 'away' {
-  if (home > away) return 'home'
-  if (home < away) return 'away'
-  return 'draw'
-}
-
-function calcPoints(
-  predictedHome: number,
-  predictedAway: number,
-  actualHome: number,
-  actualAway: number,
-  isUnderdogWin: boolean
-): { points: number; isExact: boolean } {
-  const exactMatch = predictedHome === actualHome && predictedAway === actualAway
-  const predictedResult = getResult(predictedHome, predictedAway)
-  const actualResult = getResult(actualHome, actualAway)
-  const correctResult = predictedResult === actualResult
-
-  let points = 0
-  if (exactMatch) points = 3
-  else if (correctResult) points = 1
-  if (correctResult && isUnderdogWin) points += 1
-
-  return { points, isExact: exactMatch }
-}
-
-// WC group scoring mirrored from src/app/admin/world-cup/page.tsx
-function calcGroupPoints(
-  predictedFirst: string,
-  predictedSecond: string,
-  actualFirst: string,
-  actualSecond: string
-): number {
-  return (
-    (predictedFirst === actualFirst ? 5 : 0) +
-    (predictedSecond === actualSecond ? 3 : 0) +
-    (predictedFirst === actualSecond ? 1 : 0) +
-    (predictedSecond === actualFirst ? 1 : 0)
-  )
-}
-
-// Score validation mirrored from savePrediction / saveFixtureResult
-function isValidScore(home: number, away: number, maxScore: number): boolean {
-  return (
-    Number.isInteger(home) &&
-    Number.isInteger(away) &&
-    home >= 0 &&
-    away >= 0 &&
-    home <= maxScore &&
-    away <= maxScore
-  )
-}
+import { calcPoints, getResult } from '../scoring'
 
 // ─── getResult ────────────────────────────────────────────────────────────────
 
 describe('getResult', () => {
-  it('returns home on home win', () => expect(getResult(2, 0)).toBe('home'))
-  it('returns away on away win', () => expect(getResult(0, 1)).toBe('away'))
-  it('returns draw on equal scores', () => expect(getResult(1, 1)).toBe('draw'))
-  it('returns draw on 0-0', () => expect(getResult(0, 0)).toBe('draw'))
-  it('works for high scores', () => expect(getResult(105, 98)).toBe('home'))
+  it('home win', () => expect(getResult(2, 0)).toBe('home'))
+  it('away win', () => expect(getResult(0, 1)).toBe('away'))
+  it('draw', () => expect(getResult(1, 1)).toBe('draw'))
+  it('0-0 draw', () => expect(getResult(0, 0)).toBe('draw'))
+  it('high-scoring home win', () => expect(getResult(105, 98)).toBe('home'))
 })
 
-// ─── calcPoints (football scoring) ───────────────────────────────────────────
+// ─── Score pick — new point values ───────────────────────────────────────────
 
-describe('calcPoints — football', () => {
-  it('awards 3pts for exact score', () => {
-    expect(calcPoints(2, 1, 2, 1, false).points).toBe(3)
+describe('calcPoints — score pick (5/2 system)', () => {
+  it('awards 5pts for exact scoreline', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 2, predictedAway: 1 }, 2, 1, false).points).toBe(5)
   })
 
-  it('marks exact score as perfect', () => {
-    expect(calcPoints(2, 1, 2, 1, false).isExact).toBe(true)
+  it('marks exact as isExact=true', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 2, predictedAway: 1 }, 2, 1, false).isExact).toBe(true)
   })
 
-  it('awards 1pt for correct result only (home win)', () => {
-    expect(calcPoints(3, 1, 2, 0, false).points).toBe(1)
+  it('awards 2pts for correct result, wrong score — home win', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 3, predictedAway: 1 }, 2, 0, false).points).toBe(2)
   })
 
-  it('awards 1pt for correct result only (draw)', () => {
-    expect(calcPoints(1, 1, 0, 0, false).points).toBe(1)
+  it('awards 2pts for correct result — draw', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 1, predictedAway: 1 }, 0, 0, false).points).toBe(2)
   })
 
-  it('awards 1pt for correct result only (away win)', () => {
-    expect(calcPoints(0, 2, 0, 1, false).points).toBe(1)
+  it('awards 2pts for correct result — away win', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 0, predictedAway: 2 }, 0, 1, false).points).toBe(2)
   })
 
   it('awards 0pts for wrong result', () => {
-    expect(calcPoints(2, 0, 0, 1, false).points).toBe(0)
+    expect(calcPoints({ type: 'score', predictedHome: 2, predictedAway: 0 }, 0, 1, false).points).toBe(0)
   })
 
-  it('awards 0pts for wrong result (predicted draw, actual home win)', () => {
-    expect(calcPoints(1, 1, 2, 0, false).points).toBe(0)
+  it('awards 0pts — predicted draw, actual home win', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 1, predictedAway: 1 }, 2, 0, false).points).toBe(0)
   })
 
-  it('exact score on 0-0 awards 3pts', () => {
-    expect(calcPoints(0, 0, 0, 0, false).points).toBe(3)
-  })
-})
-
-// ─── calcPoints — underdog bonus ─────────────────────────────────────────────
-
-describe('calcPoints — underdog bonus', () => {
-  it('adds +1 to exact score when underdog wins (4pts total)', () => {
-    // Home team is underdog, home team wins
-    expect(calcPoints(1, 0, 1, 0, true).points).toBe(4)
+  it('exact 0-0 awards 5pts', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 0, predictedAway: 0 }, 0, 0, false).points).toBe(5)
   })
 
-  it('adds +1 to correct result when underdog wins (2pts total)', () => {
-    expect(calcPoints(2, 0, 1, 0, true).points).toBe(2)
-  })
-
-  it('no bonus on wrong result even with underdog win', () => {
-    // predicted draw, underdog (home) won
-    expect(calcPoints(1, 1, 1, 0, true).points).toBe(0)
-  })
-
-  it('no bonus when isUnderdogWin is false', () => {
-    expect(calcPoints(2, 1, 2, 1, false).points).toBe(3)
+  it('isExact=false for correct result but wrong score', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 3, predictedAway: 1 }, 2, 0, false).isExact).toBe(false)
   })
 })
 
-// ─── isValidScore ─────────────────────────────────────────────────────────────
+// ─── Result pick ──────────────────────────────────────────────────────────────
 
-describe('isValidScore', () => {
-  it('valid football scores', () => {
-    expect(isValidScore(2, 1, 20)).toBe(true)
-    expect(isValidScore(0, 0, 20)).toBe(true)
-    expect(isValidScore(20, 20, 20)).toBe(true)
+describe('calcPoints — result pick (2pt system)', () => {
+  it('awards 2pts for correct home pick', () => {
+    expect(calcPoints({ type: 'result', predictedResult: 'home' }, 2, 0, false).points).toBe(2)
   })
 
-  it('rejects scores above football max', () => {
-    expect(isValidScore(21, 0, 20)).toBe(false)
-    expect(isValidScore(0, 21, 20)).toBe(false)
+  it('awards 2pts for correct draw pick', () => {
+    expect(calcPoints({ type: 'result', predictedResult: 'draw' }, 0, 0, false).points).toBe(2)
   })
 
-  it('valid basketball scores', () => {
-    expect(isValidScore(105, 98, 200)).toBe(true)
-    expect(isValidScore(200, 200, 200)).toBe(true)
+  it('awards 2pts for correct away pick', () => {
+    expect(calcPoints({ type: 'result', predictedResult: 'away' }, 0, 1, false).points).toBe(2)
   })
 
-  it('rejects scores above basketball max', () => {
-    expect(isValidScore(201, 0, 200)).toBe(false)
+  it('awards 0pts for wrong result pick', () => {
+    expect(calcPoints({ type: 'result', predictedResult: 'home' }, 0, 1, false).points).toBe(0)
   })
 
-  it('rejects negative scores', () => {
-    expect(isValidScore(-1, 0, 20)).toBe(false)
-    expect(isValidScore(0, -1, 20)).toBe(false)
+  it('awards 0pts for wrong draw pick', () => {
+    expect(calcPoints({ type: 'result', predictedResult: 'draw' }, 2, 1, false).points).toBe(0)
   })
 
-  it('rejects non-integers', () => {
-    expect(isValidScore(1.5, 0, 20)).toBe(false)
-    expect(isValidScore(0, 2.3, 20)).toBe(false)
+  it('is never exact', () => {
+    expect(calcPoints({ type: 'result', predictedResult: 'home' }, 2, 0, false).isExact).toBe(false)
   })
 })
 
-// ─── WC group scoring ────────────────────────────────────────────────────────
+// ─── Upset bonus ─────────────────────────────────────────────────────────────
 
-describe('calcGroupPoints', () => {
-  it('awards 5pts for correct winner only', () => {
-    expect(calcGroupPoints('Brazil', 'Argentina', 'Brazil', 'France')).toBe(5)
+describe('calcPoints — upset bonus', () => {
+  it('score pick exact + underdog win = 6pts', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 1, predictedAway: 0 }, 1, 0, true).points).toBe(6)
   })
 
-  it('awards 3pts for correct runner-up only', () => {
-    expect(calcGroupPoints('France', 'Argentina', 'Brazil', 'Argentina')).toBe(3)
+  it('score pick correct result + underdog win = 3pts', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 2, predictedAway: 0 }, 1, 0, true).points).toBe(3)
   })
 
-  it('awards 8pts for both correct', () => {
-    expect(calcGroupPoints('Brazil', 'Argentina', 'Brazil', 'Argentina')).toBe(8)
+  it('result pick correct + underdog win = 3pts', () => {
+    expect(calcPoints({ type: 'result', predictedResult: 'home' }, 1, 0, true).points).toBe(3)
   })
 
-  it('awards 1pt for picking winner in runner-up slot', () => {
-    // predicted first=Argentina (actual second), second=Brazil
-    expect(calcGroupPoints('Argentina', 'Brazil', 'Brazil', 'Argentina')).toBe(2)
+  it('no upset bonus on wrong result — score pick', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 1, predictedAway: 1 }, 1, 0, true).points).toBe(0)
   })
 
-  it('awards 2pts for both teams swapped (wrong positions)', () => {
-    expect(calcGroupPoints('Argentina', 'Brazil', 'Brazil', 'Argentina')).toBe(2)
+  it('no upset bonus on wrong result — result pick', () => {
+    expect(calcPoints({ type: 'result', predictedResult: 'draw' }, 1, 0, true).points).toBe(0)
   })
 
-  it('awards 0pts for completely wrong picks', () => {
-    expect(calcGroupPoints('France', 'Spain', 'Brazil', 'Argentina')).toBe(0)
-  })
-
-  it('awards 1pt for picking actual second as first (only wrong-position bonus)', () => {
-    expect(calcGroupPoints('Argentina', 'France', 'Brazil', 'Argentina')).toBe(1)
+  it('no upset bonus when isUnderdogWin=false', () => {
+    expect(calcPoints({ type: 'score', predictedHome: 2, predictedAway: 1 }, 2, 1, false).points).toBe(5)
   })
 })
 
-// ─── Delta scoring (re-scoring idempotency) ───────────────────────────────────
+// ─── Score pick > result pick incentive ──────────────────────────────────────
 
-describe('delta scoring — re-scoring idempotency', () => {
-  it('delta is zero when re-scoring with same result', () => {
-    const oldPts = 3
-    const newPts = calcPoints(2, 1, 2, 1, false).points
-    expect(newPts - oldPts).toBe(0)
+describe('calcPoints — score pick earns strictly more than result pick on exact', () => {
+  it('exact score (5pts) beats result-only correct (2pts)', () => {
+    const scorePts = calcPoints({ type: 'score', predictedHome: 2, predictedAway: 1 }, 2, 1, false).points
+    const resultPts = calcPoints({ type: 'result', predictedResult: 'home' }, 2, 1, false).points
+    expect(scorePts).toBeGreaterThan(resultPts)
   })
 
-  it('delta is negative when score is corrected downward', () => {
-    // Admin initially scored as home win (1pt), now corrects to away win (0pts)
-    const oldPts = 1
-    const newPts = calcPoints(2, 0, 0, 1, false).points
-    expect(newPts - oldPts).toBe(-1)
+  it('correct result from score pick equals correct result pick (both 2pts)', () => {
+    const scorePts = calcPoints({ type: 'score', predictedHome: 3, predictedAway: 1 }, 2, 0, false).points
+    const resultPts = calcPoints({ type: 'result', predictedResult: 'home' }, 2, 0, false).points
+    expect(scorePts).toBe(resultPts)
+  })
+})
+
+// ─── Delta / idempotency ─────────────────────────────────────────────────────
+
+describe('calcPoints — re-scoring deltas', () => {
+  it('zero delta when re-scoring same exact result', () => {
+    const old = 5
+    const next = calcPoints({ type: 'score', predictedHome: 2, predictedAway: 1 }, 2, 1, false).points
+    expect(next - old).toBe(0)
   })
 
-  it('delta is positive when score is corrected upward', () => {
-    // Admin initially scored as wrong (0pts), corrects to exact (3pts)
-    const oldPts = 0
-    const newPts = calcPoints(2, 1, 2, 1, false).points
-    expect(newPts - oldPts).toBe(3)
+  it('negative delta when score is corrected downward', () => {
+    const old = 2
+    const next = calcPoints({ type: 'score', predictedHome: 2, predictedAway: 0 }, 0, 1, false).points
+    expect(next - old).toBe(-2)
   })
 
-  it('total_points never goes below 0 (GREATEST guard)', () => {
-    const currentTotal = 2
-    const delta = -5
-    const result = Math.max(0, currentTotal + delta)
-    expect(result).toBe(0)
+  it('positive delta when score is corrected upward', () => {
+    const old = 0
+    const next = calcPoints({ type: 'score', predictedHome: 2, predictedAway: 1 }, 2, 1, false).points
+    expect(next - old).toBe(5)
+  })
+
+  it('result pick zero delta on re-score', () => {
+    const old = 2
+    const next = calcPoints({ type: 'result', predictedResult: 'home' }, 2, 0, false).points
+    expect(next - old).toBe(0)
   })
 })

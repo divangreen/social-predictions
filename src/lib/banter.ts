@@ -2,8 +2,8 @@ import OpenAI from 'openai'
 
 type PredictionForBanter = {
   username: string
-  predictedHome: number
-  predictedAway: number
+  predictedHome: number | null
+  predictedAway: number | null
   correct: boolean
   perfect: boolean
 }
@@ -25,7 +25,10 @@ export async function generateFixtureBanter(
       .slice(0, 6)
       .map(p => {
         const tag = p.perfect ? '🎯 perfect' : p.correct ? '✓ correct' : '✗ wrong'
-        return `${p.username} predicted ${p.predictedHome}-${p.predictedAway} (${tag})`
+        const scoreStr = p.predictedHome != null && p.predictedAway != null
+          ? `${p.predictedHome}-${p.predictedAway}`
+          : 'result-only'
+        return `${p.username} predicted ${scoreStr} (${tag})`
       })
       .join('; ')
 

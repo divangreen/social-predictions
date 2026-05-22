@@ -11,10 +11,10 @@ interface Props {
   homePlayers: NbaPlayerStat[]
   awayPlayers: NbaPlayerStat[]
   teamStats: NbaTeamStat[]
-  myPrediction: { predicted_home_score: number; predicted_away_score: number; points_earned: number | null; is_perfect: boolean | null } | null
-  peerPredictions: { id: string; user_id: string; predicted_home_score: number; predicted_away_score: number; points_earned: number | null }[]
+  myPrediction: { predicted_home_score: number | null; predicted_away_score: number | null; points_earned: number | null; is_perfect: boolean | null } | null
+  peerPredictions: { id: string; user_id: string; predicted_home_score: number | null; predicted_away_score: number | null; points_earned: number | null }[]
   userMap: Record<string, string>
-  allPreds: { predicted_home_score: number; predicted_away_score: number }[]
+  allPreds: { predicted_home_score: number | null; predicted_away_score: number | null }[]
   isCompleted: boolean
 }
 
@@ -154,9 +154,9 @@ export function NbaTabs({
 
   const myPts = myPrediction?.points_earned ?? 0
   const total = allPreds.length
-  const homeWins = allPreds.filter(p => p.predicted_home_score > p.predicted_away_score).length
-  const draws = allPreds.filter(p => p.predicted_home_score === p.predicted_away_score).length
-  const awayWins = allPreds.filter(p => p.predicted_home_score < p.predicted_away_score).length
+  const homeWins = allPreds.filter(p => (p.predicted_home_score ?? 0) > (p.predicted_away_score ?? 0)).length
+  const draws = allPreds.filter(p => (p.predicted_home_score ?? 0) === (p.predicted_away_score ?? 0)).length
+  const awayWins = allPreds.filter(p => (p.predicted_home_score ?? 0) < (p.predicted_away_score ?? 0)).length
   const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0
 
   const tabs: { key: Tab; label: string }[] = [

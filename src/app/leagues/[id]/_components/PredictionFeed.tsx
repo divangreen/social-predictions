@@ -12,8 +12,10 @@ export type FeedItem = {
   username: string
   homeTeam: string
   awayTeam: string
-  predictedHome: number
-  predictedAway: number
+  predictionType: 'score' | 'result'
+  predictedHome: number | null
+  predictedAway: number | null
+  predictedResult: 'home' | 'draw' | 'away' | null
   createdAt: string
   banter: string | null
   reactions: { emoji: Emoji; count: number; byMe: boolean }[]
@@ -143,7 +145,11 @@ export function PredictionFeed({
           <p className="mb-3 text-sm text-fg-3">
             {item.homeTeam}
             <span className="mx-2 font-black text-fg-1">
-              {item.predictedHome} – {item.predictedAway}
+              {item.predictionType === 'result'
+                ? item.predictedResult === 'home' ? 'Win'
+                  : item.predictedResult === 'away' ? 'Loss'
+                  : 'Draw'
+                : `${item.predictedHome} – ${item.predictedAway}`}
             </span>
             {item.awayTeam}
           </p>
