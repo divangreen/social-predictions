@@ -123,6 +123,30 @@ export default async function TournamentPage({
           </div>
         </div>
 
+        {/* Prediction progress bar */}
+        {fixtures && fixtures.length > 0 && (
+          <div className="mb-6">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-xs font-bold text-fg-3">
+                {predictionMap.size === fixtures.length
+                  ? '🎯 All matches predicted!'
+                  : `${predictionMap.size} / ${fixtures.length} matches predicted`}
+              </span>
+              {predictionMap.size < fixtures.length && (
+                <span className="text-xs font-bold text-fg-3">{fixtures.length - predictionMap.size} to go</span>
+              )}
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  predictionMap.size === fixtures.length ? 'bg-goal' : 'bg-gold'
+                }`}
+                style={{ width: `${Math.round((predictionMap.size / fixtures.length) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* World Cup prediction hub */}
         {id === WC_TOURNAMENT_ID && (
           <div className="mb-6 space-y-2">

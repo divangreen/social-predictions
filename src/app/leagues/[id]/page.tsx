@@ -5,6 +5,7 @@ import { CopyInviteButton } from './_components/CopyInviteButton'
 import { PredictionFeed, type FeedItem } from './_components/PredictionFeed'
 import { AdminPanel } from './_components/AdminPanel'
 import { RealtimeLeaderboard, type LeaderboardEntry } from './_components/RealtimeLeaderboard'
+import { LeagueTabs } from './_components/LeagueTabs'
 
 const FEED_EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
 
@@ -149,17 +150,21 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        {/* Leaderboard */}
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">Leaderboard</h2>
-        <RealtimeLeaderboard
-          initial={leaderboard}
-          currentUserId={user.id}
-          memberIds={memberIds}
-          tournamentId={tournamentId}
+        {/* Leaderboard + Feed tabs */}
+        <LeagueTabs
+          feedCount={feedItems.length}
+          leaderboard={
+            <RealtimeLeaderboard
+              initial={leaderboard}
+              currentUserId={user.id}
+              memberIds={memberIds}
+              tournamentId={tournamentId}
+            />
+          }
+          feed={
+            <PredictionFeed initial={feedItems} currentUserId={user.id} leagueId={id} />
+          }
         />
-
-        <h2 className="mb-3 mt-8 text-xs font-bold uppercase tracking-widest text-fg-3">Prediction feed</h2>
-        <PredictionFeed initial={feedItems} currentUserId={user.id} leagueId={id} />
 
       </div>
     </main>
