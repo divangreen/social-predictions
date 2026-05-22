@@ -13,9 +13,16 @@ export default async function TournamentsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: leagueMemberships }, { data: profile }] = await Promise.all([
+  const [{ data: leagueMemberships }, { data: profile }, { data: recentPreds }] = await Promise.all([
     supabase.from('league_members').select('league_id').eq('user_id', user.id),
     supabase.from('users').select('username').eq('id', user.id).single(),
+    supabase.from('predictions')
+      .select('points_earned, fixtures!inner(kickoff_time, status)')
+      .eq('user_id', user.id)
+      .eq('fixtures.status', 'completed')
+      .not('points_earned', 'is', null)
+      .order('kickoff_time', { referencedTable: 'fixtures', ascending: false })
+      .limit(20),
   ])
 
   const leagueIds = (leagueMemberships ?? []).map(m => m.league_id)
@@ -27,6 +34,12 @@ export default async function TournamentsPage() {
   const daysLeft = daysUntilLock()
   const locked = daysLeft === 0
 
+  let streak = 0
+  for (const p of (recentPreds ?? [])) {
+    if ((p.points_earned ?? 0) > 0) streak++
+    else break
+  }
+
   return (
     <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
@@ -34,7 +47,14 @@ export default async function TournamentsPage() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-fg-1">predictr</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-black tracking-tight text-fg-1">predictr</h1>
+              {streak >= 2 && (
+                <span className="rounded-full bg-live/10 px-2.5 py-1 text-xs font-black text-live">
+                  🔥 {streak}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-fg-3">Pick your scores. Beat your mates.</p>
           </div>
           <div className="flex items-center gap-2">
@@ -109,6 +129,12 @@ export default async function TournamentsPage() {
             >
               Create a league
             </Link>
+            <p className="mt-3 text-xs text-fg-3">
+              Got an invite?{' '}
+              <Link href="/join" className="text-fg-2 underline underline-offset-2 hover:text-fg-1 transition">
+                Enter your code here
+              </Link>
+            </p>
           </div>
         )}
 

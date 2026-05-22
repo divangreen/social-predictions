@@ -175,8 +175,37 @@ export default function FixtureCard({
       ? 'border-live/30'
       : 'border-border'
 
+  const CONFETTI_COLORS = ['#f5c842','#2ed573','#ff4757','#1e90ff','#ff6b81','#f5c842','#2ed573','#ff4757']
+  const confettiVectors = [
+    { tx: '-36px', ty: '-52px', rot: '200deg' },
+    { tx: '0px',   ty: '-60px', rot: '160deg' },
+    { tx: '36px',  ty: '-52px', rot: '240deg' },
+    { tx: '-52px', ty: '-20px', rot: '120deg' },
+    { tx: '52px',  ty: '-20px', rot: '280deg' },
+    { tx: '-30px', ty: '20px',  rot: '80deg'  },
+    { tx: '30px',  ty: '20px',  rot: '320deg' },
+    { tx: '0px',   ty: '28px',  rot: '40deg'  },
+  ]
+
   return (
-    <div className={`rounded-2xl border ${cardBorder} bg-surface-1 p-4 transition`}>
+    <div className={`relative rounded-2xl border ${cardBorder} bg-surface-1 p-4 transition`}>
+      {existing?.is_perfect && isScored && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden>
+          {confettiVectors.map((v, i) => (
+            <span
+              key={i}
+              className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full"
+              style={{
+                backgroundColor: CONFETTI_COLORS[i],
+                animation: `confetti-burst 0.7s ease-out ${i * 0.06}s both`,
+                '--tx': v.tx,
+                '--ty': v.ty,
+                '--rot': v.rot,
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Stage row + kickoff */}
       <Link

@@ -12,5 +12,15 @@ export default async function LoginPage({
   if (user) redirect('/tournaments')
 
   const { error, next } = await searchParams
-  return <LoginForm urlError={error ?? null} next={next ?? null} />
+
+  let joinLeagueName: string | null = null
+  if (next?.startsWith('/join/')) {
+    const code = next.replace('/join/', '').split('?')[0].toUpperCase()
+    if (code.length >= 4) {
+      const { data } = await supabase.from('leagues').select('name').eq('invite_code', code).single()
+      joinLeagueName = data?.name ?? null
+    }
+  }
+
+  return <LoginForm urlError={error ?? null} next={next ?? null} joinLeagueName={joinLeagueName} />
 }

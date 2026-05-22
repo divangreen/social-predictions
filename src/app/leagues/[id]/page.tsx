@@ -138,7 +138,8 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
         {/* Invite card */}
         <div className="mb-6 rounded-2xl border border-border bg-surface-1 p-4">
           <p className="mb-2 text-xs font-bold uppercase tracking-wider text-fg-3">Invite your mates</p>
-          <p className="mb-3 break-all font-mono text-sm text-fg-2">{inviteUrl}</p>
+          <p className="mb-0.5 font-mono text-3xl font-black tracking-[0.2em] text-fg-1">{league.invite_code}</p>
+          <p className="mb-3 font-mono text-xs text-fg-3 break-all">{inviteUrl}</p>
           <div className="flex gap-2">
             <CopyInviteButton text={inviteUrl} />
             <Link

@@ -8,7 +8,7 @@ const URL_ERROR_MESSAGES: Record<string, string> = {
   missing_token: 'That sign-in link has expired. Enter your email to get a fresh one.',
 }
 
-export default function LoginForm({ urlError, next }: { urlError: string | null; next: string | null }) {
+export default function LoginForm({ urlError, next, joinLeagueName }: { urlError: string | null; next: string | null; joinLeagueName?: string | null }) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -40,11 +40,27 @@ export default function LoginForm({ urlError, next }: { urlError: string | null;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-pitch px-6">
-      <div className="w-full max-w-sm space-y-8">
+      <div className="w-full max-w-sm space-y-6">
 
-        <div className="text-center">
-          <h1 className="text-4xl font-black tracking-tight text-fg-1">predictr</h1>
-          <p className="mt-2 text-sm text-fg-3">Predict. Compete. Brag.</p>
+        {/* Join context banner */}
+        {joinLeagueName ? (
+          <div className="rounded-2xl border border-gold/30 bg-gold/5 px-4 py-3 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-gold">You&apos;re invited</p>
+            <p className="mt-0.5 text-base font-black text-fg-1">{joinLeagueName}</p>
+            <p className="mt-0.5 text-xs text-fg-3">Sign in to join this league</p>
+          </div>
+        ) : (
+          <div className="text-center">
+            <h1 className="text-4xl font-black tracking-tight text-fg-1">predictr</h1>
+            <p className="mt-2 text-sm text-fg-3">Predict. Compete. Brag.</p>
+          </div>
+        )}
+
+        {/* WC urgency chip */}
+        <div className="flex justify-center">
+          <span className="rounded-full border border-gold/30 bg-gold/5 px-3 py-1 text-xs font-bold text-gold">
+            🏆 World Cup 2026 · picks lock June 11
+          </span>
         </div>
 
         {/* Google OAuth */}
