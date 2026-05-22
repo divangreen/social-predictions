@@ -69,13 +69,13 @@ function ResultButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-full py-2.5 text-xs font-black transition active:scale-95 ${
+      className={`flex-1 rounded-full py-2.5 text-[10px] font-black leading-tight transition active:scale-95 overflow-hidden ${
         active
           ? 'bg-fg-1 text-pitch'
           : 'border border-border bg-surface-2 text-fg-2 hover:border-fg-3 hover:text-fg-1'
       }`}
     >
-      {label}
+      <span className="block truncate px-1">{label}</span>
     </button>
   )
 }
@@ -237,7 +237,7 @@ export default function FixtureCard({
             {/* H/D/A result buttons */}
             <div className="flex gap-1.5">
               <ResultButton
-                label={fixture.home_team_name.split(' ')[0]}
+                label={fixture.home_team_name}
                 active={pickMode === 'result' && selectedResult === 'home'}
                 onClick={() => selectResult('home')}
               />
@@ -247,7 +247,7 @@ export default function FixtureCard({
                 onClick={() => selectResult('draw')}
               />
               <ResultButton
-                label={fixture.away_team_name.split(' ')[0]}
+                label={fixture.away_team_name}
                 active={pickMode === 'result' && selectedResult === 'away'}
                 onClick={() => selectResult('away')}
               />
@@ -296,6 +296,15 @@ export default function FixtureCard({
                 <ScoreButton onClick={() => { setAway(a => Math.min(maxScore, a + 1)); onScoreInteract() }}>+</ScoreButton>
               </div>
             </div>
+
+            {/* Prediction mode label — makes the current pick unmistakably clear */}
+            <p className="text-center text-[10px] font-bold uppercase tracking-wider text-fg-3">
+              {pickMode === 'result'
+                ? selectedResult
+                  ? `${selectedResult === 'home' ? fixture.home_team_name : selectedResult === 'away' ? fixture.away_team_name : 'Draw'} · 2pts max`
+                  : 'Pick a result above'
+                : `${home} – ${away} · up to 5pts if exact`}
+            </p>
 
             <button
               onClick={handleSave}

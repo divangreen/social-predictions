@@ -15,13 +15,13 @@ export default function JoinPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black px-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-pitch px-6">
       <div className="w-full max-w-sm space-y-8">
 
         <div className="text-center">
           <p className="text-4xl">🔗</p>
-          <h1 className="mt-3 text-2xl font-black text-white">Join a league</h1>
-          <p className="mt-1 text-sm text-zinc-400">Enter the invite code from your mate.</p>
+          <h1 className="mt-3 text-2xl font-black text-fg-1">Join a league</h1>
+          <p className="mt-1 text-sm text-fg-3">Enter the invite code from your mate.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -34,20 +34,20 @@ export default function JoinPage() {
             autoFocus
             autoCapitalize="characters"
             autoComplete="off"
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-center font-mono text-lg tracking-widest text-white placeholder-zinc-600 outline-none transition focus:border-white"
+            className="w-full rounded-xl border border-border bg-surface-1 px-4 py-3 text-center font-mono text-lg tracking-widest text-fg-1 placeholder-fg-3 outline-none transition focus:border-fg-2"
           />
           <button
             type="submit"
             disabled={code.trim().length < 4}
-            className="w-full rounded-xl bg-white py-3 text-sm font-black text-black transition hover:bg-zinc-200 disabled:opacity-40"
+            className="w-full rounded-xl bg-fg-1 py-3 text-sm font-black text-pitch transition hover:opacity-90 disabled:opacity-40"
           >
             Find league →
           </button>
         </form>
 
-        <p className="text-center text-sm text-zinc-600">
+        <p className="text-center text-sm text-fg-3">
           Don&apos;t have a code?{' '}
-          <Link href="/leagues/new" className="text-zinc-400 underline underline-offset-2 hover:text-white">
+          <Link href="/leagues/new" className="text-fg-2 underline underline-offset-2 hover:text-fg-1">
             Create your own league
           </Link>
         </p>

@@ -10,7 +10,6 @@ export default async function WCLeaderboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Fetch all bracket predictions for the WC tournament
   const { data: preds } = await supabase
     .from('bracket_predictions')
     .select('user_id, points_earned')
@@ -18,15 +17,15 @@ export default async function WCLeaderboardPage() {
 
   if (!preds?.length) {
     return (
-      <main className="min-h-screen bg-black px-4 py-8">
+      <main className="min-h-screen bg-pitch px-4 py-8">
         <div className="mx-auto max-w-lg">
-          <Link href="/world-cup/bracket" className="mb-6 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
+          <Link href="/world-cup/bracket" className="mb-6 inline-flex items-center gap-1 text-sm text-fg-3 hover:text-fg-1">
             ← My Picks
           </Link>
-          <h1 className="mb-6 text-2xl font-black text-white">WC Leaderboard</h1>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-10 text-center">
-            <p className="text-zinc-400">No picks submitted yet.</p>
-            <Link href="/world-cup/bracket" className="mt-4 inline-block text-sm font-bold text-white underline underline-offset-2">
+          <h1 className="mb-6 text-2xl font-black text-fg-1">WC Leaderboard</h1>
+          <div className="rounded-2xl border border-border bg-surface-1 p-10 text-center">
+            <p className="text-fg-2">No picks submitted yet.</p>
+            <Link href="/world-cup/bracket" className="mt-4 inline-block text-sm font-bold text-fg-1 underline underline-offset-2">
               Submit your picks →
             </Link>
           </div>
@@ -35,7 +34,6 @@ export default async function WCLeaderboardPage() {
     )
   }
 
-  // Aggregate points per user
   type UserRow = { user_id: string; totalPoints: number; groupsScored: number; groupsSubmitted: number }
   const userMap = new Map<string, UserRow>()
   for (const pred of preds) {
@@ -65,27 +63,27 @@ export default async function WCLeaderboardPage() {
   const myRow = ranked.find(r => r.user_id === user.id)
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
 
-        <Link href="/world-cup/bracket" className="mb-6 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/world-cup/bracket" className="mb-6 inline-flex items-center gap-1 text-sm text-fg-3 hover:text-fg-1">
           ← My Picks
         </Link>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-black text-white">WC Leaderboard</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-black text-fg-1">WC Leaderboard</h1>
+          <p className="mt-1 text-sm text-fg-3">
             {scoringStarted ? 'Group stage points' : 'Scoring starts after June 12 — picks submitted so far'}
           </p>
         </div>
 
         {/* My rank pill */}
         {myRow && (
-          <div className="mb-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-            <span className="text-sm font-bold text-zinc-300">Your rank</span>
+          <div className="mb-6 flex items-center justify-between rounded-2xl border border-border bg-surface-1 px-4 py-3">
+            <span className="text-sm font-bold text-fg-2">Your rank</span>
             <div className="flex items-center gap-3">
-              <span className="font-mono text-xl font-black text-white">#{myRank}</span>
-              <span className="font-mono text-sm text-zinc-400">
+              <span className="font-mono text-xl font-black text-fg-1">#{myRank}</span>
+              <span className="font-mono text-sm text-fg-3">
                 {myRow.totalPoints}pts · {myRow.groupsSubmitted}/12 groups
               </span>
             </div>
@@ -102,30 +100,30 @@ export default async function WCLeaderboardPage() {
                 key={row.user_id}
                 className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
                   isMe
-                    ? 'border-white/20 bg-white/10'
-                    : 'border-zinc-800 bg-zinc-900'
+                    ? 'border-border bg-surface-2'
+                    : 'border-border bg-surface-1'
                 }`}
               >
                 <div className="w-8 shrink-0 text-center">
                   {rankEmoji ? (
                     <span className="text-lg">{rankEmoji}</span>
                   ) : (
-                    <span className="font-mono text-sm text-zinc-500">#{rank}</span>
+                    <span className="font-mono text-sm text-fg-3">#{rank}</span>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className={`truncate text-sm font-bold ${isMe ? 'text-white' : 'text-zinc-200'}`}>
+                  <p className={`truncate text-sm font-bold ${isMe ? 'text-fg-1' : 'text-fg-1'}`}>
                     {row.username}{isMe ? ' (you)' : ''}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-fg-3">
                     {row.groupsSubmitted}/12 groups submitted
                     {row.groupsScored > 0 && ` · ${row.groupsScored} scored`}
                   </p>
                 </div>
                 <span className={`shrink-0 font-mono text-lg font-black ${
                   scoringStarted
-                    ? row.totalPoints > 0 ? 'text-white' : 'text-zinc-500'
-                    : 'text-zinc-500'
+                    ? row.totalPoints > 0 ? 'text-fg-1' : 'text-fg-3'
+                    : 'text-fg-3'
                 }`}>
                   {scoringStarted ? `${row.totalPoints}` : '—'}
                 </span>

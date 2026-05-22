@@ -39,12 +39,12 @@ export default function LoginForm({ urlError, next }: { urlError: string | null;
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black px-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-pitch px-6">
       <div className="w-full max-w-sm space-y-8">
 
         <div className="text-center">
-          <h1 className="text-4xl font-black tracking-tight text-white">predictr</h1>
-          <p className="mt-2 text-sm text-zinc-400">Predict. Compete. Brag.</p>
+          <h1 className="text-4xl font-black tracking-tight text-fg-1">predictr</h1>
+          <p className="mt-2 text-sm text-fg-3">Predict. Compete. Brag.</p>
         </div>
 
         {/* Google OAuth */}
@@ -52,7 +52,7 @@ export default function LoginForm({ urlError, next }: { urlError: string | null;
           type="button"
           onClick={handleGoogleSignIn}
           disabled={googleLoading}
-          className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-surface-1 py-3 text-sm font-semibold text-fg-1 transition hover:bg-surface-2 disabled:opacity-50"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -64,28 +64,28 @@ export default function LoginForm({ urlError, next }: { urlError: string | null;
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-zinc-800" />
-          <span className="text-xs text-zinc-600">or</span>
-          <div className="h-px flex-1 bg-zinc-800" />
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-fg-3">or</span>
+          <div className="h-px flex-1 bg-border" />
         </div>
 
         {urlError && status === 'idle' && (
-          <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
+          <div className="rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold">
             {URL_ERROR_MESSAGES[urlError] ?? 'Something went wrong. Please try again.'}
           </div>
         )}
 
         {status === 'sent' ? (
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-center">
-            <p className="text-lg font-semibold text-white">Check your email</p>
-            <p className="mt-2 text-sm text-zinc-400">
-              We sent a magic link to <span className="text-white">{email}</span>
+          <div className="rounded-2xl border border-border bg-surface-1 p-6 text-center">
+            <p className="text-lg font-semibold text-fg-1">Check your email</p>
+            <p className="mt-2 text-sm text-fg-3">
+              We sent a magic link to <span className="text-fg-1">{email}</span>
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1.5">
+              <label htmlFor="email" className="block text-sm font-medium text-fg-2 mb-1.5">
                 Email address
               </label>
               <input
@@ -96,18 +96,18 @@ export default function LoginForm({ urlError, next }: { urlError: string | null;
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-500 outline-none transition focus:border-zinc-400 focus:ring-0"
+                className="w-full rounded-xl border border-border bg-surface-1 px-4 py-3 text-fg-1 placeholder-fg-3 outline-none transition focus:border-fg-3"
               />
             </div>
 
             {status === 'error' && (
-              <p className="text-sm text-red-400">{errorMsg}</p>
+              <p className="text-sm text-live">{errorMsg}</p>
             )}
 
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+              className="w-full rounded-xl bg-fg-1 py-3 text-sm font-semibold text-pitch transition hover:opacity-90 disabled:opacity-50"
             >
               {status === 'loading' ? 'Sending…' : 'Send magic link'}
             </button>

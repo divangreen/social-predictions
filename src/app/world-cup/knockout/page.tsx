@@ -43,34 +43,34 @@ export default async function WCKnockoutPage() {
   const hasKnockoutPicks = !!knockoutRow?.picks
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
 
         <div className="mb-4 flex items-center justify-between">
-          <Link href="/world-cup/bracket" className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300">
+          <Link href="/world-cup/bracket" className="inline-flex items-center gap-1 text-sm text-fg-3 hover:text-fg-1">
             ← Group Picks
           </Link>
-          <Link href="/world-cup/leaderboard" className="text-sm font-bold text-zinc-400 hover:text-white transition">
+          <Link href="/world-cup/leaderboard" className="text-sm font-bold text-fg-2 hover:text-fg-1 transition">
             Leaderboard →
           </Link>
         </div>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-black text-white">Knockout Bracket</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-black text-fg-1">Knockout Bracket</h1>
+          <p className="mt-1 text-sm text-fg-3">
             Pick who advances through each round to the title.
           </p>
         </div>
 
         {locked ? (
-          <div className="mb-6 rounded-2xl border border-zinc-700 bg-zinc-900 p-4 text-center">
-            <p className="font-semibold text-zinc-300">Picks are locked</p>
-            <p className="text-sm text-zinc-500">The tournament has started.</p>
+          <div className="mb-6 rounded-2xl border border-border bg-surface-1 p-4 text-center">
+            <p className="font-semibold text-fg-2">Picks are locked</p>
+            <p className="text-sm text-fg-3">The tournament has started.</p>
           </div>
         ) : (
-          <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-            <p className="text-2xl font-black text-white">{daysLeft}</p>
-            <p className="text-sm text-zinc-400">days to lock in your picks</p>
+          <div className="mb-6 rounded-2xl border border-border bg-surface-1 p-4 text-center">
+            <p className="text-2xl font-black text-fg-1">{daysLeft}</p>
+            <p className="text-sm text-fg-2">days to lock in your picks</p>
           </div>
         )}
 

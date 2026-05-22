@@ -27,23 +27,23 @@ export default function OnboardingClient({
 
   if (step === 2) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-black px-6">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-pitch px-6">
         <div className="w-full max-w-sm space-y-6">
 
           <div className="text-center">
             <div className="mb-3 text-4xl">🎉</div>
-            <h1 className="text-2xl font-black text-white">You&apos;re in!</h1>
-            <p className="mt-1 text-sm text-zinc-400">One more thing — pick your battles.</p>
+            <h1 className="text-2xl font-black text-fg-1">You&apos;re in!</h1>
+            <p className="mt-1 text-sm text-fg-3">One more thing — pick your battles.</p>
           </div>
 
           {/* WC pick CTA */}
           <Link
             href={`/tournaments/${wcTournamentId}`}
-            className="flex items-center justify-between rounded-2xl border-2 border-white bg-zinc-900 px-5 py-4 transition hover:bg-zinc-800 active:scale-[0.98]"
+            className="flex items-center justify-between rounded-2xl border-2 border-fg-1 bg-surface-1 px-5 py-4 transition hover:bg-surface-2 active:scale-[0.98]"
           >
             <div>
-              <p className="font-black text-white">World Cup 2026</p>
-              <p className="text-xs text-zinc-400">Pick your champion + bracket</p>
+              <p className="font-black text-fg-1">World Cup 2026</p>
+              <p className="text-xs text-fg-3">Pick your champion + bracket</p>
             </div>
             <span className="text-2xl">⚽</span>
           </Link>
@@ -51,30 +51,30 @@ export default function OnboardingClient({
           {/* Create league */}
           <Link
             href="/leagues/new"
-            className="flex items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 transition hover:border-zinc-500 active:scale-[0.98]"
+            className="flex items-center justify-between rounded-2xl border border-border bg-surface-1 px-5 py-4 transition hover:border-fg-3 active:scale-[0.98]"
           >
             <div>
-              <p className="font-bold text-white">Create a league</p>
-              <p className="text-xs text-zinc-500">Invite your mates</p>
+              <p className="font-bold text-fg-1">Create a league</p>
+              <p className="text-xs text-fg-3">Invite your mates</p>
             </div>
-            <span className="text-zinc-400">→</span>
+            <span className="text-fg-3">→</span>
           </Link>
 
           {/* Join league */}
           <Link
             href="/join"
-            className="flex items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 transition hover:border-zinc-500 active:scale-[0.98]"
+            className="flex items-center justify-between rounded-2xl border border-border bg-surface-1 px-5 py-4 transition hover:border-fg-3 active:scale-[0.98]"
           >
             <div>
-              <p className="font-bold text-white">Join with invite code</p>
-              <p className="text-xs text-zinc-500">Got a link from a friend?</p>
+              <p className="font-bold text-fg-1">Join with invite code</p>
+              <p className="text-xs text-fg-3">Got a link from a friend?</p>
             </div>
-            <span className="text-zinc-400">→</span>
+            <span className="text-fg-3">→</span>
           </Link>
 
           <Link
             href="/tournaments"
-            className="block text-center text-sm text-zinc-500 underline underline-offset-2 hover:text-zinc-300"
+            className="block text-center text-sm text-fg-3 underline underline-offset-2 hover:text-fg-2"
           >
             Skip for now
           </Link>
@@ -85,17 +85,17 @@ export default function OnboardingClient({
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black px-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-pitch px-6">
       <div className="w-full max-w-sm space-y-8">
 
         <div className="text-center">
-          <h1 className="text-4xl font-black tracking-tight text-white">predictr</h1>
-          <p className="mt-2 text-sm text-zinc-400">Predict. Compete. Brag.</p>
+          <h1 className="text-4xl font-black tracking-tight text-fg-1">predictr</h1>
+          <p className="mt-2 text-sm text-fg-3">Predict. Compete. Brag.</p>
         </div>
 
         <div>
-          <h2 className="mb-1 text-lg font-black text-white">Pick your username</h2>
-          <p className="mb-5 text-sm text-zinc-500">This is how your mates will see you on the leaderboard.</p>
+          <h2 className="mb-1 text-lg font-black text-fg-1">Pick your username</h2>
+          <p className="mb-5 text-sm text-fg-3">This is how your mates will see you on the leaderboard.</p>
 
           <form
             action={(formData) => {
@@ -115,19 +115,19 @@ export default function OnboardingClient({
                 autoFocus
                 autoComplete="off"
                 autoCapitalize="off"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-600 outline-none transition focus:border-white"
+                className="w-full rounded-xl border border-border bg-surface-1 px-4 py-3 text-fg-1 placeholder-fg-3 outline-none transition focus:border-fg-2"
               />
-              <p className="mt-1.5 text-xs text-zinc-600">Letters, numbers and underscores only · 2–20 chars</p>
+              <p className="mt-1.5 text-xs text-fg-3">Letters, numbers and underscores only · 2–20 chars</p>
             </div>
 
             {error && (
-              <p className="text-sm text-red-400">{USERNAME_ERRORS[error] ?? 'Something went wrong.'}</p>
+              <p className="text-sm text-live">{USERNAME_ERRORS[error] ?? 'Something went wrong.'}</p>
             )}
 
             <button
               type="submit"
               disabled={isPending || username.trim().length < 2}
-              className="w-full rounded-xl bg-white py-3 text-sm font-black text-black transition hover:bg-zinc-200 disabled:opacity-40"
+              className="w-full rounded-xl bg-fg-1 py-3 text-sm font-black text-pitch transition hover:opacity-90 disabled:opacity-40"
             >
               {isPending ? 'Saving…' : 'Confirm username →'}
             </button>

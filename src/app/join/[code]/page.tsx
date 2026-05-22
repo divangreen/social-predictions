@@ -16,11 +16,11 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
 
   if (!league) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-black px-6">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-pitch px-6">
         <div className="text-center">
           <p className="text-4xl">🤔</p>
-          <h1 className="mt-4 text-xl font-bold text-white">Invalid invite link</h1>
-          <p className="mt-2 text-sm text-zinc-400">This league doesn't exist or the link has expired.</p>
+          <h1 className="mt-4 text-xl font-bold text-fg-1">Invalid invite link</h1>
+          <p className="mt-2 text-sm text-fg-3">This league doesn't exist or the link has expired.</p>
         </div>
       </main>
     )
@@ -33,21 +33,21 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
     .single()
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black px-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-pitch px-6">
       <div className="w-full max-w-sm space-y-6 text-center">
         <p className="text-5xl">🏆</p>
         <div>
-          <h1 className="text-2xl font-black text-white">{league.name}</h1>
+          <h1 className="text-2xl font-black text-fg-1">{league.name}</h1>
           {tournament?.name && (
-            <p className="mt-1 text-sm text-zinc-400">{tournament.name}</p>
+            <p className="mt-1 text-sm text-fg-3">{tournament.name}</p>
           )}
         </div>
-        <p className="text-sm text-zinc-400">You've been invited to join this prediction league.</p>
+        <p className="text-sm text-fg-3">You've been invited to join this prediction league.</p>
 
         <form action={joinLeague.bind(null, league.id)}>
           <button
             type="submit"
-            className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-zinc-200"
+            className="w-full rounded-xl bg-fg-1 py-3 text-sm font-semibold text-pitch transition hover:opacity-90"
           >
             Join league
           </button>

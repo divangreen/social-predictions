@@ -60,13 +60,11 @@ export default async function WCStandingsPage() {
     .eq('tournament_id', WC_TOURNAMENT_ID)
     .eq('status', 'completed')
 
-  // Build a team → group map for fast lookup
   const teamGroup = new Map<string, string>()
   for (const g of WC2026_GROUPS) {
     for (const t of g.teams) teamGroup.set(t, g.letter)
   }
 
-  // Filter to fixtures where both teams are in the same group (i.e. group-stage games)
   type GroupFixture = { home: string; away: string; homeScore: number; awayScore: number }
   const byGroup = new Map<string, GroupFixture[]>()
 
@@ -88,30 +86,30 @@ export default async function WCStandingsPage() {
   const hasAnyResults = byGroup.size > 0
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-pitch px-4 py-8">
       <div className="mx-auto max-w-lg">
 
         <div className="mb-6 flex items-center justify-between">
-          <Link href="/world-cup" className="text-sm text-zinc-500 hover:text-zinc-300 transition">
+          <Link href="/world-cup" className="text-sm text-fg-3 hover:text-fg-1 transition">
             ← WC Hub
           </Link>
-          <Link href="/world-cup/bracket" className="text-sm font-bold text-zinc-400 hover:text-white transition">
+          <Link href="/world-cup/bracket" className="text-sm font-bold text-fg-2 hover:text-fg-1 transition">
             My picks →
           </Link>
         </div>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-black text-white">Group Standings</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-black text-fg-1">Group Standings</h1>
+          <p className="mt-1 text-sm text-fg-3">
             {hasAnyResults ? 'Updated every minute' : 'Standings appear once matches begin · June 11'}
           </p>
         </div>
 
         {!hasAnyResults ? (
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-10 text-center">
+          <div className="rounded-2xl border border-border bg-surface-1 p-10 text-center">
             <p className="mb-2 text-3xl">⏳</p>
-            <p className="font-bold text-zinc-300">No results yet</p>
-            <p className="mt-1 text-sm text-zinc-500">Group stage kicks off June 11, 2026</p>
+            <p className="font-bold text-fg-2">No results yet</p>
+            <p className="mt-1 text-sm text-fg-3">Group stage kicks off June 11, 2026</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -121,50 +119,48 @@ export default async function WCStandingsPage() {
               const hasGames = groupFixtures.length > 0
 
               return (
-                <div key={group.letter} className="rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-zinc-800">
-                    <p className="text-xs font-black uppercase tracking-widest text-zinc-400">Group {group.letter}</p>
+                <div key={group.letter} className="rounded-2xl border border-border bg-surface-1 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border">
+                    <p className="text-xs font-black uppercase tracking-widest text-fg-3">Group {group.letter}</p>
                   </div>
 
-                  {/* Table header */}
-                  <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                  <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-fg-3">
                     <span>Team</span>
                     <span className="w-5 text-center">P</span>
                     <span className="w-5 text-center">W</span>
                     <span className="w-5 text-center">D</span>
                     <span className="w-5 text-center">L</span>
-                    <span className="w-7 text-center font-black text-zinc-500">Pts</span>
+                    <span className="w-7 text-center font-black text-fg-3">Pts</span>
                   </div>
 
-                  {/* Table rows */}
                   {table.map((row, i) => (
                     <div
                       key={row.team}
                       className={`grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 px-4 py-2.5 text-sm ${
-                        i < 2 ? 'bg-white/[0.03]' : ''
-                      } ${i === 1 ? 'border-b border-zinc-800/60' : ''}`}
+                        i < 2 ? 'bg-surface-2/30' : ''
+                      } ${i === 1 ? 'border-b border-border/60' : ''}`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         {hasGames && i < 2 && (
-                          <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-green-500" />
+                          <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-goal" />
                         )}
                         {hasGames && i >= 2 && (
-                          <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-zinc-700" />
+                          <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-border" />
                         )}
-                        <span className="truncate font-bold text-white">{row.team}</span>
+                        <span className="truncate font-bold text-fg-1">{row.team}</span>
                       </div>
-                      <span className="w-5 text-center font-mono text-zinc-400">{row.played}</span>
-                      <span className="w-5 text-center font-mono text-zinc-400">{row.won}</span>
-                      <span className="w-5 text-center font-mono text-zinc-400">{row.drawn}</span>
-                      <span className="w-5 text-center font-mono text-zinc-400">{row.lost}</span>
-                      <span className={`w-7 text-center font-mono font-black ${row.pts > 0 ? 'text-white' : 'text-zinc-600'}`}>
+                      <span className="w-5 text-center font-mono text-fg-2">{row.played}</span>
+                      <span className="w-5 text-center font-mono text-fg-2">{row.won}</span>
+                      <span className="w-5 text-center font-mono text-fg-2">{row.drawn}</span>
+                      <span className="w-5 text-center font-mono text-fg-2">{row.lost}</span>
+                      <span className={`w-7 text-center font-mono font-black ${row.pts > 0 ? 'text-fg-1' : 'text-fg-3'}`}>
                         {row.pts}
                       </span>
                     </div>
                   ))}
 
                   {!hasGames && (
-                    <div className="px-4 py-3 text-xs text-zinc-600">No results yet</div>
+                    <div className="px-4 py-3 text-xs text-fg-3">No results yet</div>
                   )}
                 </div>
               )
