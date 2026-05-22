@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import FixtureCard from './_components/FixtureCard'
+import { RealtimeFixtureList } from './_components/RealtimeFixtureList'
 import type { Prediction } from '@/types/database'
 import { WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
 import { saveChampionPick, saveTopScorerPick } from '@/app/world-cup/knockout/actions'
@@ -67,38 +67,7 @@ export default async function TournamentPage({
     (predictions ?? []).map(p => [p.fixture_id, p])
   )
 
-  type FixtureRow = NonNullable<typeof fixtures>[number]
-  const stages = Array.from(
-    (fixtures ?? []).reduce((acc, f) => {
-      if (!acc.has(f.stage)) acc.set(f.stage, [])
-      acc.get(f.stage)!.push(f)
-      return acc
-    }, new Map<string, FixtureRow[]>())
-  )
-
-  const now = new Date()
   const isLive = tournament.status === 'active'
-
-  function fixtureOrder(f: { status: string | null; kickoff_time: string }): number {
-    if (f.status === 'live') return 0
-    if (new Date(f.kickoff_time) > now) return 1
-    return 2
-  }
-
-  const sortedStages = stages
-    .map(([stage, stageFixtures]) => {
-      const sorted = [...stageFixtures].sort((a, b) => {
-        const orderDiff = fixtureOrder(a) - fixtureOrder(b)
-        if (orderDiff !== 0) return orderDiff
-        return new Date(a.kickoff_time).getTime() - new Date(b.kickoff_time).getTime()
-      })
-      return [stage, sorted] as [string, typeof stageFixtures]
-    })
-    .sort(([, aFixtures], [, bFixtures]) => {
-      const aOrder = Math.min(...aFixtures.map(fixtureOrder))
-      const bOrder = Math.min(...bFixtures.map(fixtureOrder))
-      return aOrder - bOrder
-    })
 
   return (
     <main className="min-h-screen bg-pitch px-4 py-8">
@@ -260,30 +229,14 @@ export default async function TournamentPage({
             <p className="text-fg-2">No fixtures yet.</p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {sortedStages.map(([stage, stageFixtures]) => (
-              <div key={stage}>
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">{stage}</h2>
-                <div className="space-y-3">
-                  {stageFixtures!.map(fixture => {
-                    const locked = fixture.status !== 'scheduled' || new Date(fixture.kickoff_time) <= now
-                    return (
-                      <FixtureCard
-                        key={fixture.id}
-                        fixture={fixture}
-                        tournamentId={id}
-                        existing={predictionMap.get(fixture.id) ?? null}
-                        locked={locked}
-                        maxScore={tournament.sport === 'basketball' ? 200 : 20}
-                        username={username}
-                        siteUrl={siteUrl}
-                      />
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
+          <RealtimeFixtureList
+            initialFixtures={fixtures}
+            predictions={Array.from(predictionMap.entries())}
+            tournamentId={id}
+            tournamentSport={tournament.sport}
+            username={username}
+            siteUrl={siteUrl}
+          />
         )}
 
       </div>

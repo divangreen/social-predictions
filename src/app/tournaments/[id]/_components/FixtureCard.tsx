@@ -23,6 +23,12 @@ async function shareResult(
     pts: String(pts),
     ...(pred.is_perfect ? { p: '1' } : {}),
   })
+  if (pred.prediction_type === 'score') {
+    params.set('ph', String(pred.predicted_home_score ?? ''))
+    params.set('pa', String(pred.predicted_away_score ?? ''))
+  } else if (pred.predicted_result) {
+    params.set('pr', pred.predicted_result)
+  }
   const url = `${siteUrl}/share/prediction?${params.toString()}`
   try {
     if (navigator.share) {

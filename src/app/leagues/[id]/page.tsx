@@ -32,7 +32,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       memberIds.length
         ? supabase.from('users').select('id, username, avatar_url').in('id', memberIds)
         : Promise.resolve({ data: [] }),
-      supabase.from('fixtures').select('id, home_team_name, away_team_name, ai_banter').eq('tournament_id', tournamentId),
+      supabase.from('fixtures').select('id, home_team_name, away_team_name, ai_banter, kickoff_time, status, home_score, away_score').eq('tournament_id', tournamentId),
       memberIds.length
         ? supabase.from('predictions')
             .select('id, user_id, fixture_id, prediction_type, predicted_home_score, predicted_away_score, predicted_result, points_earned, is_perfect, created_at')
@@ -92,6 +92,13 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
         count: predReactions.filter(r => r.emoji === e).length,
         byMe: predReactions.some(r => r.emoji === e && r.user_id === user.id),
       })),
+      fixtureId: p.fixture_id,
+      kickoffTime: fixture?.kickoff_time ?? new Date().toISOString(),
+      fixtureStatus: (fixture?.status ?? null) as 'scheduled' | 'live' | 'completed' | null,
+      homeScore: fixture?.home_score ?? null,
+      awayScore: fixture?.away_score ?? null,
+      pointsEarned: p.points_earned,
+      isPerfect: p.is_perfect,
     }
   })
 
@@ -163,7 +170,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
             />
           }
           feed={
-            <PredictionFeed initial={feedItems} currentUserId={user.id} leagueId={id} />
+            <PredictionFeed initial={feedItems} currentUserId={user.id} leagueId={id} siteUrl={siteUrl} />
           }
         />
 
