@@ -12,6 +12,31 @@ export type LeaderboardEntry = {
   perfectScores: number
 }
 
+function SeasonSummary({ entries }: { entries: LeaderboardEntry[] }) {
+  if (entries.length < 2) return null
+  const totalPicks = entries.reduce((s, e) => s + e.predictionsMade, 0)
+  const totalPerfect = entries.reduce((s, e) => s + e.perfectScores, 0)
+  const leader = entries[0]
+  const gap = entries.length > 1 ? leader.points - entries[1].points : null
+
+  return (
+    <div className="mb-3 grid grid-cols-3 gap-2">
+      <div className="rounded-xl bg-surface-2 p-3 text-center">
+        <p className="font-mono text-lg font-black text-fg-1">{totalPicks}</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-fg-3">Total picks</p>
+      </div>
+      <div className="rounded-xl bg-surface-2 p-3 text-center">
+        <p className="font-mono text-lg font-black text-goal">{totalPerfect}</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-fg-3">Perfect</p>
+      </div>
+      <div className="rounded-xl bg-surface-2 p-3 text-center">
+        <p className="font-mono text-lg font-black text-gold">{gap !== null ? `+${gap}` : '—'}</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-fg-3">Leader gap</p>
+      </div>
+    </div>
+  )
+}
+
 function Avatar({ username, avatarUrl }: { username: string; avatarUrl: string | null }) {
   if (avatarUrl) {
     return <img src={avatarUrl} alt={username} className="h-9 w-9 rounded-full object-cover" />
@@ -96,7 +121,9 @@ export function RealtimeLeaderboard({
   }, [memberIds, tournamentId])
 
   return (
-    <div className="space-y-2">
+    <div>
+      <SeasonSummary entries={entries} />
+      <div className="space-y-2">
       {entries.map((entry, i) => {
         const rank = i + 1
         const isMe = entry.userId === currentUserId
@@ -136,6 +163,7 @@ export function RealtimeLeaderboard({
           <p className="text-fg-2">No members yet. Share the invite link!</p>
         </div>
       )}
+      </div>
     </div>
   )
 }

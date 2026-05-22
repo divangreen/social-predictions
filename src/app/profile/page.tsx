@@ -5,6 +5,8 @@ import { LogoutButton } from '../tournaments/_components/LogoutButton'
 import { computeStreak } from '@/lib/streak'
 import { computeBadges } from '@/lib/badges'
 import { WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
+import { DeletePredictionsPanel } from './_components/DeletePredictionsPanel'
+import type { PredictionRow } from './_components/DeletePredictionsPanel'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -33,17 +35,77 @@ export default async function ProfilePage() {
   const badges = computeBadges(allPredictions, wcGroupCount ?? 0)
   const earnedBadges = badges.filter(b => b.earned)
 
+  // Global percentile
+  const [{ count: usersAbove }, { count: totalActiveUsers }] = await Promise.all([
+    supabase.from('users').select('*', { count: 'exact', head: true }).gt('total_points', totalPoints),
+    supabase.from('users').select('*', { count: 'exact', head: true }).not('total_points', 'is', null),
+  ])
+  const percentileRank = (totalActiveUsers ?? 0) >= 5
+    ? Math.max(1, Math.round(((usersAbove ?? 0) / (totalActiveUsers ?? 1)) * 100))
+    : null
+
+  // DNA stats
+  const scorePreds = allPredictions.filter(p => p.prediction_type === 'score')
+  const resultPreds = allPredictions.filter(p => p.prediction_type === 'result')
+  const scoredScorePreds = scorePreds.filter(p => p.points_earned !== null)
+  const scoredResultPreds = resultPreds.filter(p => p.points_earned !== null)
+  const scoreAcc = scoredScorePreds.length > 0
+    ? Math.round((scoredScorePreds.filter(p => (p.points_earned ?? 0) > 0).length / scoredScorePreds.length) * 100) : null
+  const resultAcc = scoredResultPreds.length > 0
+    ? Math.round((scoredResultPreds.filter(p => (p.points_earned ?? 0) > 0).length / scoredResultPreds.length) * 100) : null
+
+  const homeCount = allPredictions.filter(p => p.predicted_result === 'home').length
+  const drawCount = allPredictions.filter(p => p.predicted_result === 'draw').length
+  const awayCount = allPredictions.filter(p => p.predicted_result === 'away').length
+
+  const scoredHomePreds = allPredictions.filter(p => p.predicted_result === 'home' && p.points_earned !== null)
+  const scoredDrawPreds = allPredictions.filter(p => p.predicted_result === 'draw' && p.points_earned !== null)
+  const scoredAwayPreds = allPredictions.filter(p => p.predicted_result === 'away' && p.points_earned !== null)
+  const homeAcc = scoredHomePreds.length > 0 ? Math.round((scoredHomePreds.filter(p => (p.points_earned ?? 0) > 0).length / scoredHomePreds.length) * 100) : null
+  const drawAcc = scoredDrawPreds.length > 0 ? Math.round((scoredDrawPreds.filter(p => (p.points_earned ?? 0) > 0).length / scoredDrawPreds.length) * 100) : null
+  const awayAcc = scoredAwayPreds.length > 0 ? Math.round((scoredAwayPreds.filter(p => (p.points_earned ?? 0) > 0).length / scoredAwayPreds.length) * 100) : null
+
+  const showDna = allPredictions.length >= 3
+
+  // Fetch fixtures for all predictions (recent results + delete panel)
+  const allFixtureIds = [...new Set(allPredictions.map(p => p.fixture_id))]
+  const { data: allFixtures } = allFixtureIds.length
+    ? await supabase.from('fixtures').select('id, home_team_name, away_team_name, home_score, away_score, kickoff_time, status').in('id', allFixtureIds)
+    : { data: [] }
+
+  const fixtureMap = new Map((allFixtures ?? []).map(f => [f.id, f]))
+
   const recentScored = [...scored]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 8)
 
-  const fixtureIds = recentScored.map(p => p.fixture_id)
-  const { data: fixtures } = fixtureIds.length
-    ? await supabase.from('fixtures').select('id, home_team_name, away_team_name, home_score, away_score, kickoff_time').in('id', fixtureIds)
-    : { data: [] }
-
-  const fixtureMap = new Map((fixtures ?? []).map(f => [f.id, f]))
   const username = profile?.username ?? user.email?.split('@')[0] ?? 'User'
+
+  // Predictions for the delete panel — sorted: unscored first, then scored
+  const deleteRows: PredictionRow[] = allPredictions
+    .slice()
+    .sort((a, b) => {
+      const aScored = a.points_earned !== null ? 1 : 0
+      const bScored = b.points_earned !== null ? 1 : 0
+      if (aScored !== bScored) return aScored - bScored
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+    .map(p => {
+      const f = fixtureMap.get(p.fixture_id)
+      return {
+        id: p.id,
+        homeTeam: f?.home_team_name ?? '?',
+        awayTeam: f?.away_team_name ?? '?',
+        kickoffTime: f?.kickoff_time ?? p.created_at,
+        fixtureStatus: f?.status ?? null,
+        predictionType: p.prediction_type as 'score' | 'result',
+        predictedHome: p.predicted_home_score,
+        predictedAway: p.predicted_away_score,
+        predictedResult: p.predicted_result as 'home' | 'draw' | 'away' | null,
+        pointsEarned: p.points_earned,
+        isPerfect: p.is_perfect,
+      }
+    })
 
   return (
     <main className="min-h-screen bg-pitch px-4 py-8">
@@ -53,7 +115,15 @@ export default async function ProfilePage() {
           <Link href="/tournaments" className="text-sm text-fg-3 transition hover:text-fg-2">
             ← Tournaments
           </Link>
-          <LogoutButton />
+          <div className="flex items-center gap-3">
+            <Link
+              href="/pro"
+              className="rounded-full bg-gold/10 px-3 py-1 text-xs font-black text-gold transition hover:bg-gold/20"
+            >
+              Pro
+            </Link>
+            <LogoutButton />
+          </div>
         </div>
 
         {/* Profile card */}
@@ -65,6 +135,11 @@ export default async function ProfilePage() {
             <div className="min-w-0">
               <h1 className="truncate text-xl font-black text-fg-1">{username}</h1>
               <p className="truncate text-sm text-fg-3">{user.email}</p>
+              {percentileRank !== null && (
+                <p className="mt-0.5 text-xs font-bold text-gold">
+                  Top {percentileRank}% of predictors
+                </p>
+              )}
             </div>
           </div>
 
@@ -85,7 +160,6 @@ export default async function ProfilePage() {
             ))}
           </div>
 
-          {/* Streak */}
           {streak >= 2 && (
             <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-orange-500/10 px-4 py-3">
               <span className="text-xl">🔥</span>
@@ -104,6 +178,58 @@ export default async function ProfilePage() {
             </p>
           )}
         </div>
+
+        {/* Prediction DNA */}
+        {showDna && (
+          <div className="mb-6">
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">Prediction DNA</h2>
+            <div className="rounded-2xl border border-border bg-surface-1 p-4 space-y-4">
+
+              {/* Score vs Result */}
+              <div>
+                <p className="mb-2 text-xs font-bold text-fg-3 uppercase tracking-wider">Pick style</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-surface-2 p-3 text-center">
+                    <p className="font-mono text-lg font-black text-fg-1">{scorePreds.length}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-fg-3">Score picks</p>
+                    {scoreAcc !== null && (
+                      <p className="mt-0.5 text-xs font-bold text-goal">{scoreAcc}% hit</p>
+                    )}
+                  </div>
+                  <div className="rounded-xl bg-surface-2 p-3 text-center">
+                    <p className="font-mono text-lg font-black text-fg-1">{resultPreds.length}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-fg-3">Result picks</p>
+                    {resultAcc !== null && (
+                      <p className="mt-0.5 text-xs font-bold text-goal">{resultAcc}% hit</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* H/D/A breakdown */}
+              {(homeCount + drawCount + awayCount) > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-bold text-fg-3 uppercase tracking-wider">Result bias</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { label: 'Home', count: homeCount, acc: homeAcc },
+                      { label: 'Draw', count: drawCount, acc: drawAcc },
+                      { label: 'Away', count: awayCount, acc: awayAcc },
+                    ]).map(({ label, count, acc }) => (
+                      <div key={label} className="rounded-xl bg-surface-2 p-3 text-center">
+                        <p className="font-mono text-lg font-black text-fg-1">{count}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-fg-3">{label}</p>
+                        {acc !== null && (
+                          <p className="mt-0.5 text-xs font-bold text-goal">{acc}%</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Badges */}
         <div className="mb-6">
@@ -138,7 +264,7 @@ export default async function ProfilePage() {
         {recentScored.length > 0 ? (
           <>
             <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">Recent Results</h2>
-            <div className="space-y-2">
+            <div className="mb-6 space-y-2">
               {recentScored.map(pred => {
                 const fixture = fixtureMap.get(pred.fixture_id)
                 if (!fixture) return null
@@ -163,11 +289,21 @@ export default async function ProfilePage() {
             </div>
           </>
         ) : (
-          <div className="rounded-2xl border border-border bg-surface-1 p-10 text-center">
+          <div className="mb-6 rounded-2xl border border-border bg-surface-1 p-10 text-center">
             <p className="mb-3 text-fg-2">No results yet.</p>
             <Link href="/tournaments" className="text-sm font-bold text-fg-1 underline underline-offset-2">
               Make your first prediction →
             </Link>
+          </div>
+        )}
+
+        {/* Manage predictions */}
+        {deleteRows.length > 0 && (
+          <div className="mb-6">
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">
+              My Predictions ({deleteRows.length})
+            </h2>
+            <DeletePredictionsPanel predictions={deleteRows} />
           </div>
         )}
 
