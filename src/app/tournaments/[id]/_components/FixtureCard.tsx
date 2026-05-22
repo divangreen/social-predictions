@@ -62,26 +62,18 @@ function ScoreButton({ onClick, children }: { onClick: () => void; children: Rea
   )
 }
 
-function ResultButton({
-  label,
-  active,
-  onClick,
-}: {
-  label: string
-  active: boolean
-  onClick: () => void
-}) {
+function ResultButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-full py-2.5 text-[10px] font-black leading-tight transition active:scale-95 overflow-hidden ${
+      className={`w-full rounded-full py-3 text-xs font-black leading-tight transition active:scale-95 ${
         active
           ? 'bg-fg-1 text-pitch'
           : 'border border-border bg-surface-2 text-fg-2 hover:border-fg-3 hover:text-fg-1'
       }`}
     >
-      <span className="block truncate px-1">{label}</span>
+      <span className="block truncate px-2">{label}</span>
     </button>
   )
 }
@@ -216,7 +208,7 @@ export default function FixtureCard({
       {/* Stage row + kickoff */}
       <Link
         href={`/tournaments/${tournamentId}/fixtures/${fixture.id}`}
-        className="mb-3 flex items-center justify-between hover:opacity-80 transition"
+        className="mb-3 flex items-center justify-between transition hover:opacity-80"
       >
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-xs font-bold uppercase tracking-wider text-fg-3">{fixture.stage}</span>
@@ -230,25 +222,24 @@ export default function FixtureCard({
         <span className="shrink-0 font-mono text-xs text-fg-3">{kickoffLabel} →</span>
       </Link>
 
-      {/* Teams + score area */}
-      <div className="flex items-center justify-between gap-2 overflow-hidden">
-
-        {/* Home team */}
+      {/* Teams row — always full width, no competing centre column */}
+      <div className="mb-4 flex items-center gap-3">
+        {/* Home */}
         <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
           {fixture.home_team_logo && (
-            <img src={fixture.home_team_logo} alt={fixture.home_team_name} className="h-9 w-9 object-contain" />
+            <img src={fixture.home_team_logo} alt={fixture.home_team_name} className="h-10 w-10 object-contain" />
           )}
-          <span className="w-full wrap-break-word text-center text-sm font-bold text-fg-1 leading-tight">{fixture.home_team_name}</span>
+          <span className="w-full text-center text-sm font-bold leading-tight text-fg-1 wrap-break-word">{fixture.home_team_name}</span>
           {fixture.is_underdog_home && (
             <span className="rounded-full bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold text-gold">underdog</span>
           )}
         </div>
 
-        {/* Centre */}
+        {/* Centre: locked state score/status OR simple VS for unlocked */}
         {locked ? (
-          <div className="flex flex-col items-center gap-1.5">
+          <div className="flex shrink-0 flex-col items-center gap-1.5">
             {fixture.status === 'completed' && fixture.home_score != null ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className="font-mono text-3xl font-black text-fg-1">{fixture.home_score}</span>
                 <span className="text-fg-3">–</span>
                 <span className="font-mono text-3xl font-black text-fg-1">{fixture.away_score}</span>
@@ -259,7 +250,7 @@ export default function FixtureCard({
               <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-bold text-fg-3">Locked</span>
             )}
             {existing && (
-              <span className="font-mono text-xs text-fg-3">
+              <span className="max-w-30 text-center font-mono text-xs text-fg-3">
                 {existing.prediction_type === 'result'
                   ? `My pick: ${existing.predicted_result === 'home' ? fixture.home_team_name : existing.predicted_result === 'away' ? fixture.away_team_name : 'Draw'}`
                   : `My pick: ${existing.predicted_home_score}–${existing.predicted_away_score}`}
@@ -267,128 +258,132 @@ export default function FixtureCard({
             )}
           </div>
         ) : (
-          <div className="flex shrink-0 flex-col items-center gap-3">
-
-            {/* H/D/A result buttons */}
-            <div className="flex gap-1.5">
-              <ResultButton
-                label={fixture.home_team_name}
-                active={pickMode === 'result' && selectedResult === 'home'}
-                onClick={() => selectResult('home')}
-              />
-              <ResultButton
-                label="Draw"
-                active={pickMode === 'result' && selectedResult === 'draw'}
-                onClick={() => selectResult('draw')}
-              />
-              <ResultButton
-                label={fixture.away_team_name}
-                active={pickMode === 'result' && selectedResult === 'away'}
-                onClick={() => selectResult('away')}
-              />
-            </div>
-
-            {/* Divider */}
-            <div className="flex w-full items-center gap-2">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-fg-3">or exact score +5pts</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-
-            {/* Score picker */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5">
-                <ScoreButton onClick={() => { setHome(h => Math.max(0, h - 1)); onScoreInteract() }}>−</ScoreButton>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={pickMode === 'score' ? home : ''}
-                  placeholder="–"
-                  onChange={e => {
-                    const v = parseInt(e.target.value)
-                    if (!isNaN(v)) { setHome(Math.min(maxScore, Math.max(0, v))); onScoreInteract() }
-                  }}
-                  onFocus={onScoreInteract}
-                  className={`${maxScore > 99 ? 'w-14' : 'w-9'} rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
-                />
-                <ScoreButton onClick={() => { setHome(h => Math.min(maxScore, h + 1)); onScoreInteract() }}>+</ScoreButton>
-              </div>
-              <span className="text-fg-3">–</span>
-              <div className="flex items-center gap-1.5">
-                <ScoreButton onClick={() => { setAway(a => Math.max(0, a - 1)); onScoreInteract() }}>−</ScoreButton>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={pickMode === 'score' ? away : ''}
-                  placeholder="–"
-                  onChange={e => {
-                    const v = parseInt(e.target.value)
-                    if (!isNaN(v)) { setAway(Math.min(maxScore, Math.max(0, v))); onScoreInteract() }
-                  }}
-                  onFocus={onScoreInteract}
-                  className={`${maxScore > 99 ? 'w-14' : 'w-9'} rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
-                />
-                <ScoreButton onClick={() => { setAway(a => Math.min(maxScore, a + 1)); onScoreInteract() }}>+</ScoreButton>
-              </div>
-            </div>
-
-            {/* Prediction mode label — makes the current pick unmistakably clear */}
-            <p className="text-center text-[10px] font-bold uppercase tracking-wider text-fg-3">
-              {pickMode === 'result'
-                ? selectedResult
-                  ? `${selectedResult === 'home' ? fixture.home_team_name : selectedResult === 'away' ? fixture.away_team_name : 'Draw'} · 2pts max`
-                  : 'Pick a result above'
-                : `${home} – ${away} · up to 5pts if exact`}
-            </p>
-
-            {/* Sticky save button — floats above nav bar when prediction is dirty */}
-            <div className={isDirty && status !== 'saved' ? 'sticky bottom-20 z-10 pt-1' : ''}>
-              <button
-                onClick={handleSave}
-                disabled={
-                  status === 'saving' ||
-                  (!isDirty && !!existing) ||
-                  (pickMode === 'result' && !selectedResult)
-                }
-                className={`w-full rounded-full py-2.5 text-sm font-black transition active:scale-95 disabled:opacity-30 ${
-                  isDirty && status !== 'saved'
-                    ? 'bg-gold text-pitch shadow-lg shadow-gold/30 hover:opacity-90'
-                    : 'bg-fg-1 text-pitch hover:opacity-90'
-                }`}
-              >
-                {status === 'saving'
-                  ? 'Saving…'
-                  : status === 'saved'
-                  ? '✓ Saved'
-                  : isDirty
-                  ? `Lock in ${pickMode === 'result'
-                      ? selectedResult === 'home' ? fixture.home_team_name.split(' ')[0]
-                        : selectedResult === 'away' ? fixture.away_team_name.split(' ')[0]
-                        : selectedResult === 'draw' ? 'Draw'
-                        : '…'
-                      : `${home}–${away}`} →`
-                  : existing ? 'Update' : 'Save'}
-              </button>
-            </div>
-
-            {status === 'error' && (
-              <p className="text-center text-xs text-loss">{errorMsg}</p>
-            )}
-          </div>
+          <span className="shrink-0 text-sm font-bold text-fg-3">vs</span>
         )}
 
-        {/* Away team */}
+        {/* Away */}
         <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
           {fixture.away_team_logo && (
-            <img src={fixture.away_team_logo} alt={fixture.away_team_name} className="h-9 w-9 object-contain" />
+            <img src={fixture.away_team_logo} alt={fixture.away_team_name} className="h-10 w-10 object-contain" />
           )}
-          <span className="w-full wrap-break-word text-center text-sm font-bold text-fg-1 leading-tight">{fixture.away_team_name}</span>
+          <span className="w-full text-center text-sm font-bold leading-tight text-fg-1 wrap-break-word">{fixture.away_team_name}</span>
           {fixture.is_underdog_away && (
             <span className="rounded-full bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold text-gold">underdog</span>
           )}
         </div>
-
       </div>
+
+      {/* Prediction controls — full card width, only when unlocked */}
+      {!locked && (
+        <div className="space-y-3">
+
+          {/* H/D/A buttons — grid gives equal columns and full width */}
+          <div className="grid grid-cols-3 gap-2">
+            <ResultButton
+              label={fixture.home_team_name}
+              active={pickMode === 'result' && selectedResult === 'home'}
+              onClick={() => selectResult('home')}
+            />
+            <ResultButton
+              label="Draw"
+              active={pickMode === 'result' && selectedResult === 'draw'}
+              onClick={() => selectResult('draw')}
+            />
+            <ResultButton
+              label={fixture.away_team_name}
+              active={pickMode === 'result' && selectedResult === 'away'}
+              onClick={() => selectResult('away')}
+            />
+          </div>
+
+          {/* OR divider */}
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-fg-3">or exact score +5pts</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Score picker */}
+          <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <ScoreButton onClick={() => { setHome(h => Math.max(0, h - 1)); onScoreInteract() }}>−</ScoreButton>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={pickMode === 'score' ? home : ''}
+                placeholder="–"
+                onChange={e => {
+                  const v = parseInt(e.target.value)
+                  if (!isNaN(v)) { setHome(Math.min(maxScore, Math.max(0, v))); onScoreInteract() }
+                }}
+                onFocus={onScoreInteract}
+                className={`${maxScore > 99 ? 'w-14' : 'w-9'} rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+              />
+              <ScoreButton onClick={() => { setHome(h => Math.min(maxScore, h + 1)); onScoreInteract() }}>+</ScoreButton>
+            </div>
+            <span className="text-fg-3">–</span>
+            <div className="flex items-center gap-1.5">
+              <ScoreButton onClick={() => { setAway(a => Math.max(0, a - 1)); onScoreInteract() }}>−</ScoreButton>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={pickMode === 'score' ? away : ''}
+                placeholder="–"
+                onChange={e => {
+                  const v = parseInt(e.target.value)
+                  if (!isNaN(v)) { setAway(Math.min(maxScore, Math.max(0, v))); onScoreInteract() }
+                }}
+                onFocus={onScoreInteract}
+                className={`${maxScore > 99 ? 'w-14' : 'w-9'} rounded-lg bg-transparent text-center font-mono text-2xl font-black text-fg-1 outline-none focus:bg-surface-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+              />
+              <ScoreButton onClick={() => { setAway(a => Math.min(maxScore, a + 1)); onScoreInteract() }}>+</ScoreButton>
+            </div>
+          </div>
+
+          {/* Current pick label */}
+          <p className="text-center text-[10px] font-bold uppercase tracking-wider text-fg-3">
+            {pickMode === 'result'
+              ? selectedResult
+                ? `${selectedResult === 'home' ? fixture.home_team_name : selectedResult === 'away' ? fixture.away_team_name : 'Draw'} · 2pts max`
+                : 'Pick a result above'
+              : `${home} – ${away} · up to 5pts if exact`}
+          </p>
+
+          {/* Save button — sticky when dirty */}
+          <div className={isDirty && status !== 'saved' ? 'sticky bottom-20 z-10 pt-1' : ''}>
+            <button
+              onClick={handleSave}
+              disabled={
+                status === 'saving' ||
+                (!isDirty && !!existing) ||
+                (pickMode === 'result' && !selectedResult)
+              }
+              className={`w-full rounded-full py-3 text-sm font-black transition active:scale-95 disabled:opacity-30 ${
+                isDirty && status !== 'saved'
+                  ? 'bg-gold text-pitch shadow-lg shadow-gold/30 hover:opacity-90'
+                  : 'bg-fg-1 text-pitch hover:opacity-90'
+              }`}
+            >
+              {status === 'saving'
+                ? 'Saving…'
+                : status === 'saved'
+                ? '✓ Saved'
+                : isDirty
+                ? `Lock in ${pickMode === 'result'
+                    ? selectedResult === 'home' ? fixture.home_team_name.split(' ')[0]
+                      : selectedResult === 'away' ? fixture.away_team_name.split(' ')[0]
+                      : selectedResult === 'draw' ? 'Draw'
+                      : '…'
+                    : `${home}–${away}`} →`
+                : existing ? 'Update' : 'Save'}
+            </button>
+          </div>
+
+          {status === 'error' && (
+            <p className="text-center text-xs text-loss">{errorMsg}</p>
+          )}
+        </div>
+      )}
 
       {/* Result panel */}
       {isScored && existing && (
