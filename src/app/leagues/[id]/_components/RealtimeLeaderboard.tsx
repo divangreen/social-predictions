@@ -64,6 +64,10 @@ export function RealtimeLeaderboard({
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
+    setEntries(initial)
+  }, [initial])
+
+  useEffect(() => {
     if (!memberIds.length) return
 
     const channel = supabase
