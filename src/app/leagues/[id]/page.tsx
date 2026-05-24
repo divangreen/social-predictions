@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@supabase/ssr'
+import type { Database } from '@/types/database'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CopyInviteButton } from './_components/CopyInviteButton'
@@ -9,16 +11,25 @@ import { LeagueTabs } from './_components/LeagueTabs'
 
 const FEED_EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
 
+function createAdminClient() {
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  )
+}
+
 export default async function LeaguePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
+  const admin = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const [{ data: league }, { data: members }] = await Promise.all([
     supabase.from('leagues').select('id, name, invite_code, tournament_id, created_by').eq('id', id).single(),
-    supabase.from('league_members').select('user_id').eq('league_id', id),
+    admin.from('league_members').select('user_id').eq('league_id', id),
   ])
 
   if (!league) notFound()
@@ -30,7 +41,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
     await Promise.all([
       supabase.from('tournaments').select('name').eq('id', tournamentId).single(),
       memberIds.length
-        ? supabase.from('users').select('id, username, avatar_url').in('id', memberIds)
+        ? admin.from('users').select('id, username, avatar_url').in('id', memberIds)
         : Promise.resolve({ data: [] }),
       supabase.from('fixtures').select('id, home_team_name, away_team_name, ai_banter, kickoff_time, status, home_score, away_score').eq('tournament_id', tournamentId),
       memberIds.length
