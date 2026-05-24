@@ -51,9 +51,13 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
   function handleRemove(userId: string, username: string) {
     if (!confirm(`Remove ${username} from the league?`)) return
     startTransition(async () => {
-      const res = await removeMember(leagueId, userId)
-      if (res?.error) flash(res.error)
-      else flash(`${username} removed`)
+      try {
+        const res = await removeMember(leagueId, userId)
+        if (res?.error) flash(res.error)
+        else flash(`${username} removed`)
+      } catch {
+        flash('Failed to remove member. Please try again.')
+      }
     })
   }
 
@@ -77,12 +81,16 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
 
   function handleAdd(userId: string, username: string) {
     startTransition(async () => {
-      const res = await addMember(leagueId, userId)
-      if (res?.error) flash(res.error)
-      else {
-        flash(`${username} added to league`)
-        setSearchQuery('')
-        setSearchResults([])
+      try {
+        const res = await addMember(leagueId, userId)
+        if (res?.error) flash(res.error)
+        else {
+          flash(`${username} added to league`)
+          setSearchQuery('')
+          setSearchResults([])
+        }
+      } catch {
+        flash('Failed to add member. Please try again.')
       }
     })
   }

@@ -1,8 +1,18 @@
 'use server'
 
 import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@supabase/ssr'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import type { Database } from '@/types/database'
+
+function createAdminClient() {
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  )
+}
 
 async function assertAdmin(leagueId: string) {
   const supabase = await createClient()
@@ -32,11 +42,12 @@ export async function deleteLeague(leagueId: string) {
 }
 
 export async function removeMember(leagueId: string, targetUserId: string): Promise<{ error: string } | void> {
-  const { userId, supabase } = await assertAdmin(leagueId)
+  const { userId } = await assertAdmin(leagueId)
 
   if (targetUserId === userId) return { error: 'Cannot remove yourself' }
 
-  await supabase
+  const admin = createAdminClient()
+  await admin
     .from('league_members')
     .delete()
     .eq('league_id', leagueId)
@@ -80,9 +91,10 @@ export async function addMember(
   leagueId: string,
   targetUserId: string
 ): Promise<{ error: string } | void> {
-  const { supabase } = await assertAdmin(leagueId)
+  await assertAdmin(leagueId)
 
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('league_members')
     .insert({ league_id: leagueId, user_id: targetUserId })
 
