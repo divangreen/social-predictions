@@ -16,11 +16,17 @@ export default async function WCHubPage() {
   const locked = new Date() >= WC_LOCK_DATE
   const daysLeft = daysUntil(WC_LOCK_DATE)
 
+  const { data: fixtures } = await supabase
+    .from('fixtures')
+    .select('id')
+    .eq('tournament_id', WC_TOURNAMENT_ID)
+
+  const wcFixtureIds = (fixtures ?? []).map(f => f.id)
+
   const [
     { data: groupPicks },
     { data: knockoutRow },
     { data: predictions },
-    { data: fixtures },
     { data: profile },
   ] = await Promise.all([
     supabase
@@ -34,17 +40,9 @@ export default async function WCHubPage() {
       .eq('user_id', user.id)
       .eq('tournament_id', WC_TOURNAMENT_ID)
       .single(),
-    supabase
-      .from('predictions')
-      .select('id, points_earned')
-      .eq('user_id', user.id)
-      .in('fixture_id',
-        (await supabase.from('fixtures').select('id').eq('tournament_id', WC_TOURNAMENT_ID)).data?.map(f => f.id) ?? []
-      ),
-    supabase
-      .from('fixtures')
-      .select('id')
-      .eq('tournament_id', WC_TOURNAMENT_ID),
+    wcFixtureIds.length
+      ? supabase.from('predictions').select('id, points_earned').eq('user_id', user.id).in('fixture_id', wcFixtureIds)
+      : Promise.resolve({ data: [] }),
     supabase.from('users').select('username').eq('id', user.id).single(),
   ])
 

@@ -42,10 +42,19 @@ export default async function TournamentPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: tournament }, { data: fixtures }, { data: predictions }, { data: profile }, { data: knockoutRow }] = await Promise.all([
+  const { data: fixtures } = await supabase
+    .from('fixtures')
+    .select('*')
+    .eq('tournament_id', id)
+    .order('kickoff_time', { ascending: true })
+
+  const fixtureIds = (fixtures ?? []).map(f => f.id)
+
+  const [{ data: tournament }, { data: predictions }, { data: profile }, { data: knockoutRow }] = await Promise.all([
     supabase.from('tournaments').select('*').eq('id', id).single(),
-    supabase.from('fixtures').select('*').eq('tournament_id', id).order('kickoff_time', { ascending: true }),
-    supabase.from('predictions').select('*').eq('user_id', user.id),
+    fixtureIds.length
+      ? supabase.from('predictions').select('*').eq('user_id', user.id).in('fixture_id', fixtureIds)
+      : Promise.resolve({ data: [] }),
     supabase.from('users').select('username').eq('id', user.id).single(),
     id === WC_TOURNAMENT_ID
       ? supabase.from('knockout_picks').select('picks').eq('user_id', user.id).eq('tournament_id', WC_TOURNAMENT_ID).single()

@@ -80,19 +80,23 @@ export function RealtimeLeaderboard({
           if (!memberIds.includes(updated.user_id)) return
 
           // Re-fetch all predictions for this tournament's members to recompute leaderboard
-          const { data: predictions } = await supabase
-            .from('predictions')
-            .select('user_id, points_earned, is_perfect, fixture_id')
-            .in('user_id', memberIds)
-
           const { data: fixtures } = await supabase
             .from('fixtures')
             .select('id')
             .eq('tournament_id', tournamentId)
 
-          if (!predictions || !fixtures) return
+          if (!fixtures) return
 
           const fixtureSet = new Set(fixtures.map(f => f.id))
+          const fixtureIds = Array.from(fixtureSet)
+
+          const { data: predictions } = await supabase
+            .from('predictions')
+            .select('user_id, points_earned, is_perfect, fixture_id')
+            .in('user_id', memberIds)
+            .in('fixture_id', fixtureIds)
+
+          if (!predictions) return
           const statsMap = new Map<string, { points: number; made: number; perfect: number }>()
 
           predictions

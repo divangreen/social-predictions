@@ -1,12 +1,17 @@
 export type ScoredPrediction = {
   points_earned: number | null
   created_at: string
+  kickoff_time?: string | null
 }
 
 export function computeStreak(predictions: ScoredPrediction[]): number {
   const sorted = predictions
     .filter(p => p.points_earned !== null)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .sort((a, b) => {
+      const aTime = a.kickoff_time ?? a.created_at
+      const bTime = b.kickoff_time ?? b.created_at
+      return new Date(bTime).getTime() - new Date(aTime).getTime()
+    })
 
   let streak = 0
   for (const p of sorted) {

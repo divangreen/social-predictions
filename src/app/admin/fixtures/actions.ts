@@ -15,6 +15,29 @@ export async function saveFixtureResult(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !isAdmin(user.id)) return { error: 'Unauthorized' }
 
+  // Validate before touching the DB
+  const { data: fixtureCheck } = await supabase
+    .from('fixtures')
+    .select('tournament_id, home_team_name, away_team_name, is_underdog_home, is_underdog_away')
+    .eq('id', fixtureId)
+    .single()
+
+  if (!fixtureCheck) return { error: 'Fixture not found' }
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('sport')
+    .eq('id', fixtureCheck.tournament_id)
+    .single()
+  const maxScore = tournament?.sport === 'basketball' ? 200 : 20
+
+  if (
+    !Number.isInteger(homeScore) || !Number.isInteger(awayScore) ||
+    homeScore < 0 || awayScore < 0 || homeScore > maxScore || awayScore > maxScore
+  ) {
+    return { error: 'Invalid score' }
+  }
+
   const { data: fixture, error: fixtureError } = await supabase
     .from('fixtures')
     .update({ home_score: homeScore, away_score: awayScore, status: 'completed' })
@@ -23,21 +46,6 @@ export async function saveFixtureResult(
     .single()
 
   if (fixtureError || !fixture) return { error: fixtureError?.message ?? 'Failed to update fixture' }
-
-  const { data: tournament } = await supabase
-    .from('tournaments')
-    .select('sport')
-    .eq('id', fixture.tournament_id)
-    .single()
-  const maxScore = tournament?.sport === 'basketball' ? 200 : 20
-
-  if (
-    !Number.isInteger(homeScore) || !Number.isInteger(awayScore) ||
-    homeScore < 0 || awayScore < 0 || homeScore > maxScore || awayScore > maxScore
-  ) {
-    await supabase.from('fixtures').update({ home_score: null, away_score: null, status: 'scheduled' }).eq('id', fixtureId)
-    return { error: 'Invalid score' }
-  }
 
   // Fetch existing points_earned so we can calculate the delta below — this
   // supports admin re-scoring (score correction) without double-counting.

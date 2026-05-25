@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { saveFixtureResult } from '../actions'
 import type { Fixture } from '@/types/database'
 
-export default function ScoreForm({ fixture }: { fixture: Fixture }) {
+export default function ScoreForm({ fixture, maxScore = 20 }: { fixture: Fixture; maxScore?: number }) {
   const [home, setHome] = useState(fixture.home_score ?? 0)
   const [away, setAway] = useState(fixture.away_score ?? 0)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -31,7 +31,7 @@ export default function ScoreForm({ fixture }: { fixture: Fixture }) {
         <input
           type="number"
           min={0}
-          max={20}
+          max={maxScore}
           value={home}
           onChange={e => setHome(Number(e.target.value))}
           className="w-14 rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-center text-white outline-none focus:border-zinc-400"
@@ -40,7 +40,7 @@ export default function ScoreForm({ fixture }: { fixture: Fixture }) {
         <input
           type="number"
           min={0}
-          max={20}
+          max={maxScore}
           value={away}
           onChange={e => setAway(Number(e.target.value))}
           className="w-14 rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-center text-white outline-none focus:border-zinc-400"

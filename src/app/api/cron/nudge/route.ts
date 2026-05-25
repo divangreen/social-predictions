@@ -106,11 +106,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, nudged: 0, reason: 'all members have predictions' })
   }
 
-  // Fetch auth emails for users who need nudging
+  // Fetch auth emails for users who need nudging — paginate to handle > 1000 users
   const userIds = [...userFixturesMap.keys()]
-  const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+  const allAuthUsers: { id: string; email?: string }[] = []
+  let page = 1
+  while (true) {
+    const { data: authPage } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
+    const users = authPage?.users ?? []
+    allAuthUsers.push(...users)
+    if (users.length < 1000) break
+    page++
+  }
   const emailMap = new Map(
-    (authUsers?.users ?? [])
+    allAuthUsers
       .filter(u => userIds.includes(u.id) && u.email)
       .map(u => [u.id, u.email!])
   )

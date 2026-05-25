@@ -31,7 +31,6 @@ export default async function ProfilePage() {
   const correct = scored.filter(p => (p.points_earned ?? 0) > 0).length
   const accuracy = scored.length > 0 ? Math.round((correct / scored.length) * 100) : 0
   const leagueCount = leagues?.length ?? 0
-  const streak = computeStreak(allPredictions)
   const badges = computeBadges(allPredictions, wcGroupCount ?? 0)
   const earnedBadges = badges.filter(b => b.earned)
 
@@ -74,6 +73,15 @@ export default async function ProfilePage() {
     : { data: [] }
 
   const fixtureMap = new Map((allFixtures ?? []).map(f => [f.id, f]))
+
+  // Compute streak using fixture kickoff_time so consecutive match wins are counted correctly
+  const streak = computeStreak(
+    allPredictions.map(p => ({
+      points_earned: p.points_earned,
+      created_at: p.created_at,
+      kickoff_time: fixtureMap.get(p.fixture_id)?.kickoff_time ?? null,
+    }))
+  )
 
   const recentScored = [...scored]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -276,7 +284,14 @@ export default async function ProfilePage() {
                         {fixture.home_team_name} {fixture.home_score}–{fixture.away_score} {fixture.away_team_name}
                       </p>
                       <p className="font-mono text-xs text-fg-3">
-                        My pick: {pred.predicted_home_score}–{pred.predicted_away_score}
+                        My pick:{' '}
+                        {pred.prediction_type === 'result'
+                          ? pred.predicted_result === 'home'
+                            ? `${fixture.home_team_name} win`
+                            : pred.predicted_result === 'away'
+                            ? `${fixture.away_team_name} win`
+                            : 'Draw'
+                          : `${pred.predicted_home_score}–${pred.predicted_away_score}`}
                         {pred.is_perfect && ' · 🎯'}
                       </p>
                     </div>

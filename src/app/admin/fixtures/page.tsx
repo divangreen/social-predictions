@@ -17,13 +17,15 @@ export default async function AdminFixturesPage() {
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name')
+    .select('id, name, sport')
     .order('name')
 
   const { data: fixtures } = await supabase
     .from('fixtures')
     .select('*')
     .order('kickoff_time')
+
+  const sportByTournament = new Map((tournaments ?? []).map(t => [t.id, t.sport]))
 
   const fixturesByTournament = new Map<string, typeof fixtures>()
   ;(fixtures ?? []).forEach(f => {
@@ -66,7 +68,7 @@ export default async function AdminFixturesPage() {
                           {f.status ?? 'scheduled'}
                         </span>
                       </div>
-                      <ScoreForm fixture={f} />
+                      <ScoreForm fixture={f} maxScore={sportByTournament.get(f.tournament_id) === 'basketball' ? 200 : 20} />
                     </div>
                   ))}
                 </div>

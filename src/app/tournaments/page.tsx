@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { WC_LOCK_DATE, WC_TOURNAMENT_ID } from '@/lib/wc2026-groups'
+import { computeStreak } from '@/lib/streak'
 
 function daysUntilLock() {
   return Math.max(0, Math.ceil((WC_LOCK_DATE.getTime() - Date.now()) / 86_400_000))
@@ -27,18 +28,20 @@ export default async function TournamentsPage() {
 
   const leagueIds = (leagueMemberships ?? []).map(m => m.league_id)
   const { data: myLeagues } = leagueIds.length
-    ? await supabase.from('leagues').select('id, name, tournament_id').in('id', leagueIds).eq('tournament_id', WC_TOURNAMENT_ID)
+    ? await supabase.from('leagues').select('id, name, tournament_id').in('id', leagueIds)
     : { data: [] }
 
   const username = profile?.username ?? user.email?.split('@')[0] ?? '?'
   const daysLeft = daysUntilLock()
   const locked = daysLeft === 0
 
-  let streak = 0
-  for (const p of (recentPreds ?? [])) {
-    if ((p.points_earned ?? 0) > 0) streak++
-    else break
-  }
+  const streak = computeStreak(
+    (recentPreds ?? []).map(p => ({
+      points_earned: p.points_earned,
+      created_at: new Date().toISOString(),
+      kickoff_time: (p.fixtures as unknown as { kickoff_time: string } | null)?.kickoff_time ?? null,
+    }))
+  )
 
   return (
     <main className="min-h-screen bg-pitch px-4 py-8">

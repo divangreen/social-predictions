@@ -22,7 +22,7 @@ function fixtureOrder(f: Pick<Fixture, 'status' | 'kickoff_time'>, now: Date): n
 
 export function RealtimeFixtureList({ initialFixtures, predictions, tournamentId, tournamentSport, username, siteUrl }: Props) {
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures)
-  const predictionMap = useMemo(() => new Map<string, Prediction>(predictions), [])
+  const predictionMap = useMemo(() => new Map<string, Prediction>(predictions), [predictions])
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -43,31 +43,32 @@ export function RealtimeFixtureList({ initialFixtures, predictions, tournamentId
     return () => { supabase.removeChannel(channel) }
   }, [tournamentId])
 
-  const now = new Date()
   const maxScore = tournamentSport === 'basketball' ? 200 : 20
 
-  const stages = Array.from(
-    fixtures.reduce((acc, f) => {
-      if (!acc.has(f.stage)) acc.set(f.stage, [])
-      acc.get(f.stage)!.push(f)
-      return acc
-    }, new Map<string, Fixture[]>())
-  )
-
-  const sortedStages = stages
-    .map(([stage, stageFixtures]) => {
-      const sorted = [...stageFixtures].sort((a, b) => {
-        const orderDiff = fixtureOrder(a, now) - fixtureOrder(b, now)
-        if (orderDiff !== 0) return orderDiff
-        return new Date(a.kickoff_time).getTime() - new Date(b.kickoff_time).getTime()
+  const sortedStages = useMemo(() => {
+    const now = new Date()
+    const stages = Array.from(
+      fixtures.reduce((acc, f) => {
+        if (!acc.has(f.stage)) acc.set(f.stage, [])
+        acc.get(f.stage)!.push(f)
+        return acc
+      }, new Map<string, Fixture[]>())
+    )
+    return stages
+      .map(([stage, stageFixtures]) => {
+        const sorted = [...stageFixtures].sort((a, b) => {
+          const orderDiff = fixtureOrder(a, now) - fixtureOrder(b, now)
+          if (orderDiff !== 0) return orderDiff
+          return new Date(a.kickoff_time).getTime() - new Date(b.kickoff_time).getTime()
+        })
+        return [stage, sorted] as [string, Fixture[]]
       })
-      return [stage, sorted] as [string, Fixture[]]
-    })
-    .sort(([, aF], [, bF]) => {
-      const aOrder = Math.min(...aF.map(f => fixtureOrder(f, now)))
-      const bOrder = Math.min(...bF.map(f => fixtureOrder(f, now)))
-      return aOrder - bOrder
-    })
+      .sort(([, aF], [, bF]) => {
+        const aOrder = Math.min(...aF.map(f => fixtureOrder(f, now)))
+        const bOrder = Math.min(...bF.map(f => fixtureOrder(f, now)))
+        return aOrder - bOrder
+      })
+  }, [fixtures])
 
   return (
     <div className="space-y-8">
@@ -76,7 +77,7 @@ export function RealtimeFixtureList({ initialFixtures, predictions, tournamentId
           <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">{stage}</h2>
           <div className="space-y-3">
             {stageFixtures.map(fixture => {
-              const locked = fixture.status !== 'scheduled' || new Date(fixture.kickoff_time) <= now
+              const locked = fixture.status !== 'scheduled' || new Date(fixture.kickoff_time) <= new Date()
               return (
                 <FixtureCard
                   key={fixture.id}
