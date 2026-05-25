@@ -99,8 +99,8 @@ async function syncFromFootballData(leagueId: string, supabase: ReturnType<typeo
   if (!apiKey) throw new Error('FOOTBALL_DATA_API_KEY not set')
 
   const now = new Date()
-  const dateFrom = new Date(now); dateFrom.setDate(dateFrom.getDate() - 30)
-  const dateTo = new Date(now); dateTo.setDate(dateTo.getDate() + 60)
+  const dateFrom = new Date(now); dateFrom.setDate(dateFrom.getDate() - 60)
+  const dateTo = new Date(now); dateTo.setDate(dateTo.getDate() + 180)
   const fmt = (d: Date) => d.toISOString().split('T')[0]
 
   const res = await fetch(
