@@ -76,10 +76,21 @@ interface FdMatch {
   competition: { name: string }
   utcDate: string
   status: string
+  stage: string | null
   matchday: number | null
   homeTeam: { name: string; shortName: string; crest: string | null }
   awayTeam: { name: string; shortName: string; crest: string | null }
   score: { fullTime: { home: number | null; away: number | null } }
+}
+
+const FD_STAGE_LABELS: Record<string, string> = {
+  GROUP_STAGE: 'Group Stage',
+  ROUND_OF_16: 'Round of 16',
+  ROUND_OF_32: 'Round of 32',
+  QUARTER_FINALS: 'Quarter-finals',
+  SEMI_FINALS: 'Semi-finals',
+  THIRD_PLACE: '3rd Place',
+  FINAL: 'Final',
 }
 
 // ─── Supabase client factory ──────────────────────────────────────────────────
@@ -133,15 +144,17 @@ async function syncFromFootballData(leagueId: string, supabase: ReturnType<typeo
     return {
       id: fdIdToUuid(m.id),
       tournament_id: leagueId,
-      home_team_name: m.homeTeam.shortName || m.homeTeam.name,
-      away_team_name: m.awayTeam.shortName || m.awayTeam.name,
+      home_team_name: m.homeTeam.shortName || m.homeTeam.name || 'TBD',
+      away_team_name: m.awayTeam.shortName || m.awayTeam.name || 'TBD',
       home_team_logo: m.homeTeam.crest || null,
       away_team_logo: m.awayTeam.crest || null,
       kickoff_time: m.utcDate,
       status,
       home_score: status === 'completed' ? (m.score.fullTime.home ?? null) : null,
       away_score: status === 'completed' ? (m.score.fullTime.away ?? null) : null,
-      stage: m.matchday ? `Round ${m.matchday}` : 'Group Stage',
+      stage: m.stage === 'GROUP_STAGE' && m.matchday
+        ? `Matchday ${m.matchday}`
+        : (m.stage ? FD_STAGE_LABELS[m.stage] ?? m.stage : 'Knockout'),
       is_underdog_home: false,
       is_underdog_away: false,
     }
@@ -149,12 +162,14 @@ async function syncFromFootballData(leagueId: string, supabase: ReturnType<typeo
 
   const BATCH = 50
   let synced = 0
+  const batchErrors: string[] = []
   for (let i = 0; i < fixtures.length; i += BATCH) {
     const { error } = await supabase.from('fixtures').upsert(fixtures.slice(i, i + BATCH), { onConflict: 'id' })
     if (!error) synced += Math.min(BATCH, fixtures.length - i)
+    else batchErrors.push(`batch ${i}-${i + BATCH}: ${error.message}`)
   }
 
-  return { synced, total: fixtures.length, tournament: tournamentName }
+  return { synced, total: fixtures.length, tournament: tournamentName, ...(batchErrors.length && { batchErrors }) }
 }
 
 // ─── TheSportsDB sync ─────────────────────────────────────────────────────────
