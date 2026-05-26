@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/sync/live",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }
