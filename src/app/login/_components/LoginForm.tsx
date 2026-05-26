@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { sendMagicLink } from '../actions'
 import { createClient } from '@/lib/supabase'
 
@@ -38,33 +39,52 @@ export default function LoginForm({ urlError, next, joinLeagueName }: { urlError
     }
   }
 
+  const ease = [0.22, 1, 0.36, 1] as [number, number, number, number]
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  }
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease } },
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-pitch px-6">
-      <div className="w-full max-w-sm space-y-6">
+      <motion.div
+        className="w-full max-w-sm space-y-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
 
         {/* Join context banner */}
-        {joinLeagueName ? (
-          <div className="rounded-2xl border border-gold/30 bg-gold/5 px-4 py-3 text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-gold">You&apos;re invited</p>
-            <p className="mt-0.5 text-base font-black text-fg-1">{joinLeagueName}</p>
-            <p className="mt-0.5 text-xs text-fg-3">Sign in to join this league</p>
-          </div>
-        ) : (
-          <div className="text-center">
-            <h1 className="text-4xl font-black tracking-tight text-fg-1">predictr</h1>
-            <p className="mt-2 text-sm text-fg-3">Predict. Compete. Brag.</p>
-          </div>
-        )}
+        <motion.div variants={itemVariants}>
+          {joinLeagueName ? (
+            <div className="rounded-2xl border border-gold/30 bg-gold/5 px-4 py-3 text-center">
+              <p className="text-xs font-bold uppercase tracking-wider text-gold">You&apos;re invited</p>
+              <p className="mt-0.5 text-base font-black text-fg-1">{joinLeagueName}</p>
+              <p className="mt-0.5 text-xs text-fg-3">Sign in to join this league</p>
+            </div>
+          ) : (
+            <div className="text-center">
+              <h1 className="text-4xl font-black tracking-tight text-fg-1">predictr</h1>
+              <p className="mt-2 text-sm text-fg-3">Predict. Compete. Brag.</p>
+            </div>
+          )}
+        </motion.div>
 
         {/* WC urgency chip */}
-        <div className="flex justify-center">
+        <motion.div variants={itemVariants} className="flex justify-center">
           <span className="rounded-full border border-gold/30 bg-gold/5 px-3 py-1 text-xs font-bold text-gold">
             🏆 World Cup 2026 · picks lock June 11
           </span>
-        </div>
+        </motion.div>
 
         {/* Google OAuth */}
-        <button
+        <motion.button
+          variants={itemVariants}
+          whileTap={{ scale: 0.98 }}
           type="button"
           onClick={handleGoogleSignIn}
           disabled={googleLoading}
@@ -77,29 +97,38 @@ export default function LoginForm({ urlError, next, joinLeagueName }: { urlError
             <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
           </svg>
           {googleLoading ? 'Redirecting…' : 'Continue with Google'}
-        </button>
+        </motion.button>
 
-        <div className="flex items-center gap-3">
+        <motion.div variants={itemVariants} className="flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
           <span className="text-xs text-fg-3">or</span>
           <div className="h-px flex-1 bg-border" />
-        </div>
+        </motion.div>
 
         {urlError && status === 'idle' && (
-          <div className="rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold">
+          <motion.div
+            variants={itemVariants}
+            className="rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold"
+          >
             {URL_ERROR_MESSAGES[urlError] ?? 'Something went wrong. Please try again.'}
-          </div>
+          </motion.div>
         )}
 
         {status === 'sent' ? (
-          <div className="rounded-2xl border border-border bg-surface-1 p-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.35, ease }}
+            className="rounded-2xl border border-border bg-surface-1 p-6 text-center"
+          >
+            <p className="text-2xl mb-2">📬</p>
             <p className="text-lg font-semibold text-fg-1">Check your email</p>
             <p className="mt-2 text-sm text-fg-3">
               We sent a magic link to <span className="text-fg-1">{email}</span>
             </p>
-          </div>
+          </motion.div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-fg-2 mb-1.5">
                 Email address
@@ -117,19 +146,26 @@ export default function LoginForm({ urlError, next, joinLeagueName }: { urlError
             </div>
 
             {status === 'error' && (
-              <p className="text-sm text-live">{errorMsg}</p>
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm text-live"
+              >
+                {errorMsg}
+              </motion.p>
             )}
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={status === 'loading'}
               className="w-full rounded-xl bg-fg-1 py-3 text-sm font-semibold text-pitch transition hover:opacity-90 disabled:opacity-50"
             >
               {status === 'loading' ? 'Sending…' : 'Send magic link'}
-            </button>
-          </form>
+            </motion.button>
+          </motion.form>
         )}
-      </div>
+      </motion.div>
     </main>
   )
 }

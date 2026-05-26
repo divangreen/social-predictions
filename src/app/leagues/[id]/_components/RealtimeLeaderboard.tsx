@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase'
 
 export type LeaderboardEntry = {
@@ -132,6 +133,7 @@ export function RealtimeLeaderboard({
     <div>
       <SeasonSummary entries={entries} />
       <div className="space-y-2">
+      <AnimatePresence initial={false}>
       {entries.map((entry, i) => {
         const rank = i + 1
         const isMe = entry.userId === currentUserId
@@ -139,9 +141,14 @@ export function RealtimeLeaderboard({
         const rankLabel = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : String(rank)
 
         return (
-          <div
+          <motion.div
             key={entry.userId}
-            className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-500 ${
+            layout
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ layout: { type: 'spring', stiffness: 300, damping: 30 }, duration: 0.3 }}
+            className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors duration-500 ${
               isFlashing
                 ? 'border-goal/40 bg-goal/10'
                 : isMe
@@ -149,7 +156,15 @@ export function RealtimeLeaderboard({
                   : 'border-border bg-surface-1'
             }`}
           >
-            <span className="w-6 text-center text-sm font-black text-fg-3">{rankLabel}</span>
+            <motion.span
+              key={`rank-${entry.userId}-${rank}`}
+              initial={{ scale: 1.4, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="w-6 text-center text-sm font-black text-fg-3"
+            >
+              {rankLabel}
+            </motion.span>
             <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-bold text-fg-1">
@@ -159,12 +174,19 @@ export function RealtimeLeaderboard({
                 {entry.predictionsMade} picks{entry.perfectScores > 0 && ` · 🎯 ${entry.perfectScores}`}
               </p>
             </div>
-            <span className={`font-mono text-lg font-black transition-colors duration-500 ${isFlashing ? 'text-goal' : 'text-gold'}`}>
+            <motion.span
+              key={`pts-${entry.userId}-${entry.points}`}
+              initial={{ scale: 1.3, color: '#2ed573' }}
+              animate={{ scale: 1, color: isFlashing ? '#2ed573' : '#f5c842' }}
+              transition={{ duration: 0.5 }}
+              className="font-mono text-lg font-black"
+            >
               {entry.points}
-            </span>
-          </div>
+            </motion.span>
+          </motion.div>
         )
       })}
+      </AnimatePresence>
 
       {entries.length === 0 && (
         <div className="rounded-2xl border border-border bg-surface-1 p-8 text-center">

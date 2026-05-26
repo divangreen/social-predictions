@@ -9,7 +9,9 @@ import { calcPoints, getResult } from '@/lib/scoring'
 export async function saveFixtureResult(
   fixtureId: string,
   homeScore: number,
-  awayScore: number
+  awayScore: number,
+  isUnderdogHome = false,
+  isUnderdogAway = false,
 ): Promise<{ error: string | null; scored?: number }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -40,7 +42,7 @@ export async function saveFixtureResult(
 
   const { data: fixture, error: fixtureError } = await supabase
     .from('fixtures')
-    .update({ home_score: homeScore, away_score: awayScore, status: 'completed' })
+    .update({ home_score: homeScore, away_score: awayScore, status: 'completed', is_underdog_home: isUnderdogHome, is_underdog_away: isUnderdogAway })
     .eq('id', fixtureId)
     .select()
     .single()
