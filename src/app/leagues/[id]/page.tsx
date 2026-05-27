@@ -9,6 +9,7 @@ import { AdminPanel } from './_components/AdminPanel'
 import { RealtimeLeaderboard, type LeaderboardEntry } from './_components/RealtimeLeaderboard'
 import { LeagueTabs, type MemberDisplay } from './_components/LeagueTabs'
 import { LeagueSwitcher } from './_components/LeagueSwitcher'
+import { WorldCupBanner } from './_components/WorldCupBanner'
 
 const FEED_EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
 
@@ -176,6 +177,11 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           </div>
           {tournament?.name && <p className="text-sm text-fg-3">{tournament.name}</p>}
         </div>
+
+        {/* World Cup banner */}
+        {tournament?.name?.toLowerCase().includes('world cup') && (
+          <WorldCupBanner />
+        )}
 
         {/* Invite card */}
         <div className="mb-6 rounded-2xl border border-border bg-surface-1 p-4">
