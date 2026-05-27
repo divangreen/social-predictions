@@ -44,21 +44,24 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
   const memberIds = (members ?? []).map(m => m.user_id)
   const tournamentId = league.tournament_id
 
-  const [{ data: tournament }, { data: memberUsers }, { data: tournamentFixtures }, { data: predictions }] =
+  const [{ data: tournament }, { data: memberUsers }, { data: tournamentFixtures }] =
     await Promise.all([
       supabase.from('tournaments').select('name').eq('id', tournamentId).single(),
       memberIds.length
         ? admin.from('users').select('id, username, avatar_url').in('id', memberIds)
         : Promise.resolve({ data: [] }),
       supabase.from('fixtures').select('id, home_team_name, away_team_name, ai_banter, kickoff_time, status, home_score, away_score').eq('tournament_id', tournamentId),
-      memberIds.length
-        ? supabase.from('predictions')
-            .select('id, user_id, fixture_id, prediction_type, predicted_home_score, predicted_away_score, predicted_result, points_earned, is_perfect, created_at')
-            .eq('league_id', id)
-            .in('user_id', memberIds)
-            .order('created_at', { ascending: false })
-        : Promise.resolve({ data: [] }),
     ])
+
+  const fixtureIds = (tournamentFixtures ?? []).map(f => f.id)
+
+  const { data: predictions } = memberIds.length && fixtureIds.length
+    ? await supabase.from('predictions')
+        .select('id, user_id, fixture_id, prediction_type, predicted_home_score, predicted_away_score, predicted_result, points_earned, is_perfect, created_at')
+        .in('user_id', memberIds)
+        .in('fixture_id', fixtureIds)
+        .order('created_at', { ascending: false })
+    : { data: [] }
 
   const fixtureSet = new Set((tournamentFixtures ?? []).map(f => f.id))
   const fixtureMap = new Map((tournamentFixtures ?? []).map(f => [f.id, f]))
