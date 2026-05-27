@@ -33,10 +33,10 @@ export default async function TournamentPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ saved_champion?: string; saved_top_scorer?: string; error?: string }>
+  searchParams: Promise<{ saved_champion?: string; saved_top_scorer?: string; error?: string; leagueId?: string }>
 }) {
   const { id } = await params
-  const { saved_champion, saved_top_scorer, error: spError } = await searchParams
+  const { saved_champion, saved_top_scorer, error: spError, leagueId } = await searchParams
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -52,14 +52,30 @@ export default async function TournamentPage({
 
   const [{ data: tournament }, { data: predictions }, { data: profile }, { data: knockoutRow }] = await Promise.all([
     supabase.from('tournaments').select('*').eq('id', id).single(),
-    fixtureIds.length
-      ? supabase.from('predictions').select('*').eq('user_id', user.id).in('fixture_id', fixtureIds)
+    fixtureIds.length && leagueId
+      ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', leagueId).in('fixture_id', fixtureIds)
       : Promise.resolve({ data: [] }),
     supabase.from('users').select('username').eq('id', user.id).single(),
     id === WC_TOURNAMENT_ID
       ? supabase.from('knockout_picks').select('picks').eq('user_id', user.id).eq('tournament_id', WC_TOURNAMENT_ID).single()
       : Promise.resolve({ data: null }),
   ])
+
+  // Fetch user's leagues for this tournament to show picker when no leagueId
+  let userLeagues: { id: string; name: string }[] = []
+  if (!leagueId) {
+    const { data: memberships } = await supabase.from('league_members').select('league_id').eq('user_id', user.id)
+    const memberLeagueIds = (memberships ?? []).map(m => m.league_id)
+    if (memberLeagueIds.length) {
+      const { data: allLeagues } = await supabase
+        .from('leagues')
+        .select('id, name')
+        .eq('tournament_id', id)
+        .in('id', memberLeagueIds)
+        .order('name')
+      userLeagues = allLeagues ?? []
+    }
+  }
 
   // knockout_picks.picks is typed as Record<string,unknown> in the DB schema
   // (Supabase can't express nested JSON shapes); cast to the app type here.
@@ -232,16 +248,58 @@ export default async function TournamentPage({
           </div>
         )}
 
+        {/* League picker — shown when no league context */}
+        {!leagueId && (
+          <div className="mb-6 rounded-2xl border border-gold/30 bg-gold/5 p-4">
+            <p className="mb-3 text-sm font-bold text-fg-1">Pick for which league?</p>
+            {userLeagues.length > 0 ? (
+              <div className="space-y-2">
+                {userLeagues.map(league => (
+                  <Link
+                    key={league.id}
+                    href={`/tournaments/${id}?leagueId=${league.id}`}
+                    className="flex items-center justify-between rounded-xl border border-border bg-surface-1 px-4 py-2.5 text-sm font-bold text-fg-1 transition hover:border-fg-3 active:scale-[0.98]"
+                  >
+                    {league.name}
+                    <span className="text-fg-3">→</span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="mb-3 text-sm text-fg-3">You need to be in a league to make picks.</p>
+                <Link
+                  href="/leagues/new"
+                  className="inline-block rounded-xl bg-fg-1 px-5 py-2 text-sm font-bold text-pitch transition hover:opacity-90"
+                >
+                  Create a league
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Fixtures */}
         {!fixtures?.length ? (
           <div className="rounded-2xl border border-border bg-surface-1 p-10 text-center">
             <p className="text-fg-2">No fixtures yet.</p>
           </div>
-        ) : (
+        ) : leagueId ? (
           <RealtimeFixtureList
             initialFixtures={fixtures}
             predictions={Array.from(predictionMap.entries())}
             tournamentId={id}
+            leagueId={leagueId}
+            tournamentSport={tournament.sport}
+            username={username}
+            siteUrl={siteUrl}
+          />
+        ) : (
+          <RealtimeFixtureList
+            initialFixtures={fixtures}
+            predictions={[]}
+            tournamentId={id}
+            leagueId=""
             tournamentSport={tournament.sport}
             username={username}
             siteUrl={siteUrl}

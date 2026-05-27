@@ -7,7 +7,8 @@ import { CopyInviteButton } from './_components/CopyInviteButton'
 import { PredictionFeed, type FeedItem } from './_components/PredictionFeed'
 import { AdminPanel } from './_components/AdminPanel'
 import { RealtimeLeaderboard, type LeaderboardEntry } from './_components/RealtimeLeaderboard'
-import { LeagueTabs } from './_components/LeagueTabs'
+import { LeagueTabs, type MemberDisplay } from './_components/LeagueTabs'
+import { LeagueSwitcher } from './_components/LeagueSwitcher'
 
 const FEED_EMOJIS = ['🔥', '💀', '😂', '🎯'] as const
 
@@ -27,10 +28,16 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: league }, { data: members }] = await Promise.all([
+  const [{ data: league }, { data: members }, { data: myMemberships }] = await Promise.all([
     supabase.from('leagues').select('id, name, invite_code, tournament_id, created_by').eq('id', id).single(),
     admin.from('league_members').select('user_id').eq('league_id', id),
+    supabase.from('league_members').select('league_id').eq('user_id', user.id),
   ])
+
+  const myLeagueIds = (myMemberships ?? []).map(m => m.league_id)
+  const { data: myLeagues } = myLeagueIds.length
+    ? await supabase.from('leagues').select('id, name').in('id', myLeagueIds).order('name')
+    : { data: [] }
 
   if (!league) notFound()
 
@@ -47,6 +54,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       memberIds.length
         ? supabase.from('predictions')
             .select('id, user_id, fixture_id, prediction_type, predicted_home_score, predicted_away_score, predicted_result, points_earned, is_perfect, created_at')
+            .eq('league_id', id)
             .in('user_id', memberIds)
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [] }),
@@ -128,6 +136,13 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
     })
     .sort((a, b) => b.points - a.points)
 
+  const memberDisplayList: MemberDisplay[] = leaderboard.map(e => ({
+    userId: e.userId,
+    username: e.username,
+    avatarUrl: e.avatarUrl,
+    isAdmin: e.userId === league.created_by,
+  }))
+
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const inviteUrl = `${siteUrl}/join/${league.invite_code}`
 
@@ -139,16 +154,22 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           <Link href="/tournaments" className="mb-4 inline-flex items-center gap-1 text-sm text-fg-3 transition hover:text-fg-2">
             ← Tournaments
           </Link>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black tracking-tight text-fg-1">{league.name}</h1>
-            {league.created_by === user.id && (
-              <AdminPanel
-                leagueId={id}
-                leagueName={league.name}
-                members={leaderboard.map(e => ({ userId: e.userId, username: e.username }))}
-                currentUserId={user.id}
-              />
-            )}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <h1 className="truncate text-2xl font-black tracking-tight text-fg-1">{league.name}</h1>
+              {league.created_by === user.id && (
+                <AdminPanel
+                  leagueId={id}
+                  leagueName={league.name}
+                  members={leaderboard.map(e => ({ userId: e.userId, username: e.username }))}
+                  currentUserId={user.id}
+                />
+              )}
+            </div>
+            <LeagueSwitcher
+              currentLeagueId={id}
+              leagues={myLeagues ?? []}
+            />
           </div>
           {tournament?.name && <p className="text-sm text-fg-3">{tournament.name}</p>}
         </div>
@@ -161,7 +182,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           <div className="flex gap-2">
             <CopyInviteButton text={inviteUrl} />
             <Link
-              href={`/tournaments/${tournamentId}`}
+              href={`/tournaments/${tournamentId}?leagueId=${id}`}
               className="flex-1 rounded-xl border border-border py-2 text-center text-sm font-bold text-fg-2 transition hover:border-fg-3 hover:text-fg-1"
             >
               Make predictions
@@ -169,15 +190,18 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        {/* Leaderboard + Feed tabs */}
+        {/* Leaderboard + Feed + Members tabs */}
         <LeagueTabs
           feedCount={feedItems.length}
+          members={memberDisplayList}
+          currentUserId={user.id}
           leaderboard={
             <RealtimeLeaderboard
               initial={leaderboard}
               currentUserId={user.id}
               memberIds={memberIds}
               tournamentId={tournamentId}
+              leagueId={id}
             />
           }
           feed={

@@ -30,6 +30,7 @@ export interface Prediction {
   id: string
   user_id: string
   fixture_id: string
+  league_id: string
   prediction_type: 'score' | 'result'
   predicted_home_score: number | null
   predicted_away_score: number | null

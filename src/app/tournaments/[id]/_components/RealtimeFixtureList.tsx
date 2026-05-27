@@ -9,6 +9,7 @@ interface Props {
   initialFixtures: Fixture[]
   predictions: [string, Prediction][]
   tournamentId: string
+  leagueId: string
   tournamentSport: string
   username: string
   siteUrl: string
@@ -20,7 +21,7 @@ function fixtureOrder(f: Pick<Fixture, 'status' | 'kickoff_time'>, now: Date): n
   return 2
 }
 
-export function RealtimeFixtureList({ initialFixtures, predictions, tournamentId, tournamentSport, username, siteUrl }: Props) {
+export function RealtimeFixtureList({ initialFixtures, predictions, tournamentId, leagueId, tournamentSport, username, siteUrl }: Props) {
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures)
   const predictionMap = useMemo(() => new Map<string, Prediction>(predictions), [predictions])
   const supabase = useMemo(() => createClient(), [])
@@ -83,6 +84,7 @@ export function RealtimeFixtureList({ initialFixtures, predictions, tournamentId
                   key={fixture.id}
                   fixture={fixture}
                   tournamentId={tournamentId}
+                  leagueId={leagueId}
                   existing={predictionMap.get(fixture.id) ?? null}
                   locked={locked}
                   maxScore={maxScore}

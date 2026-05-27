@@ -43,6 +43,7 @@ async function shareResult(
 interface Props {
   fixture: Fixture
   tournamentId: string
+  leagueId: string
   existing: Prediction | null
   locked: boolean
   maxScore?: number
@@ -81,6 +82,7 @@ function ResultButton({ label, active, onClick }: { label: string; active: boole
 export default function FixtureCard({
   fixture,
   tournamentId,
+  leagueId,
   existing,
   locked,
   maxScore = 20,
@@ -117,8 +119,8 @@ export default function FixtureCard({
   async function handleSave() {
     setStatus('saving')
     const result = pickMode === 'result'
-      ? await savePrediction(fixture.id, tournamentId, null, null, 'result', selectedResult)
-      : await savePrediction(fixture.id, tournamentId, home, away, 'score', null)
+      ? await savePrediction(fixture.id, tournamentId, null, null, 'result', selectedResult, leagueId)
+      : await savePrediction(fixture.id, tournamentId, home, away, 'score', null, leagueId)
 
     if (result.error) {
       setErrorMsg(result.error)

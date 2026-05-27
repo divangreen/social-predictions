@@ -11,10 +11,12 @@ export async function savePrediction(
   awayScore: number | null,
   predictionType: 'score' | 'result' = 'score',
   predictedResult: PredictionResult | null = null,
+  leagueId: string,
 ): Promise<{ error: string | null }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
+  if (!leagueId) return { error: 'No league selected' }
 
   const { data: fixture } = await supabase
     .from('fixtures')
@@ -37,12 +39,13 @@ export async function savePrediction(
         {
           user_id: user.id,
           fixture_id: fixtureId,
+          league_id: leagueId,
           prediction_type: 'result',
           predicted_result: predictedResult,
           predicted_home_score: null,
           predicted_away_score: null,
         },
-        { onConflict: 'user_id,fixture_id' }
+        { onConflict: 'user_id,fixture_id,league_id' }
       )
     if (error) return { error: error.message }
   } else {
@@ -68,12 +71,13 @@ export async function savePrediction(
         {
           user_id: user.id,
           fixture_id: fixtureId,
+          league_id: leagueId,
           prediction_type: 'score',
           predicted_home_score: homeScore,
           predicted_away_score: awayScore,
           predicted_result: null,
         },
-        { onConflict: 'user_id,fixture_id' }
+        { onConflict: 'user_id,fixture_id,league_id' }
       )
     if (error) return { error: error.message }
   }

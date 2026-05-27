@@ -27,13 +27,11 @@ function PredictIcon({ active }: { active: boolean }) {
   )
 }
 
-function WCIcon({ active }: { active: boolean }) {
+function BellIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.75} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 21h8M12 21v-4" />
-      <path d="M7 4h10l1 8c0 3.3-2.7 6-6 6s-6-2.7-6-6l1-8z" />
-      <path d="M4.5 9H3a1 1 0 00-1 1v1a4 4 0 004 4h.5" />
-      <path d="M19.5 9H21a1 1 0 011 1v1a4 4 0 01-4 4h-.5" />
+      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 01-3.46 0" />
     </svg>
   )
 }
@@ -89,10 +87,10 @@ export function BottomNav({
       active: pathname.startsWith('/leagues'),
     },
     {
-      href: '/world-cup',
-      label: 'WC Hub',
-      Icon: WCIcon,
-      active: pathname.startsWith('/world-cup'),
+      href: '/notifications',
+      label: 'Alerts',
+      Icon: BellIcon,
+      active: pathname.startsWith('/notifications'),
     },
     {
       href: '/profile',

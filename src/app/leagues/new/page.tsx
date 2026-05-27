@@ -19,11 +19,18 @@ export default async function NewLeaguePage({
 
   const { error } = await searchParams
 
-  const { data: tournaments } = await supabase
+  const { data: rawTournaments } = await supabase
     .from('tournaments')
     .select('id, name')
     .in('status', ['upcoming', 'active'])
     .order('name')
+
+  const seen = new Set<string>()
+  const tournaments = (rawTournaments ?? []).filter(t => {
+    if (seen.has(t.name)) return false
+    seen.add(t.name)
+    return true
+  })
 
   return (
     <main className="min-h-screen bg-pitch px-4 py-8">

@@ -66,7 +66,7 @@ export default async function ProfilePage() {
 
   const showDna = allPredictions.length >= 3
 
-  // Fetch fixtures for all predictions (recent results + delete panel)
+  // Fetch fixtures for all predictions (streak + delete panel)
   const allFixtureIds = [...new Set(allPredictions.map(p => p.fixture_id))]
   const { data: allFixtures } = allFixtureIds.length
     ? await supabase.from('fixtures').select('id, home_team_name, away_team_name, home_score, away_score, kickoff_time, status').in('id', allFixtureIds)
@@ -83,9 +83,15 @@ export default async function ProfilePage() {
     }))
   )
 
-  const recentScored = [...scored]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 8)
+  // Recent Results: driven by completed fixtures, not picks
+  const { data: recentFixtures } = await supabase
+    .from('fixtures')
+    .select('id, home_team_name, away_team_name, home_score, away_score, kickoff_time, status')
+    .eq('status', 'completed')
+    .order('kickoff_time', { ascending: false })
+    .limit(8)
+
+  const predByFixture = new Map(allPredictions.map(p => [p.fixture_id, p]))
 
   const username = profile?.username ?? user.email?.split('@')[0] ?? 'User'
 
@@ -269,35 +275,40 @@ export default async function ProfilePage() {
         </div>
 
         {/* Recent results */}
-        {recentScored.length > 0 ? (
+        {(recentFixtures ?? []).length > 0 ? (
           <>
             <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-fg-3">Recent Results</h2>
             <div className="mb-6 space-y-2">
-              {recentScored.map(pred => {
-                const fixture = fixtureMap.get(pred.fixture_id)
-                if (!fixture) return null
-                const pts = pred.points_earned ?? 0
+              {(recentFixtures ?? []).map(fixture => {
+                const pred = predByFixture.get(fixture.id)
+                const pts = pred?.points_earned ?? null
                 return (
-                  <div key={pred.id} className="flex items-center gap-3 rounded-2xl border border-border bg-surface-1 px-4 py-3">
+                  <div key={fixture.id} className="flex items-center gap-3 rounded-2xl border border-border bg-surface-1 px-4 py-3">
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-bold text-fg-1">
                         {fixture.home_team_name} {fixture.home_score}–{fixture.away_score} {fixture.away_team_name}
                       </p>
-                      <p className="font-mono text-xs text-fg-3">
-                        My pick:{' '}
-                        {pred.prediction_type === 'result'
-                          ? pred.predicted_result === 'home'
-                            ? `${fixture.home_team_name} win`
-                            : pred.predicted_result === 'away'
-                            ? `${fixture.away_team_name} win`
-                            : 'Draw'
-                          : `${pred.predicted_home_score}–${pred.predicted_away_score}`}
-                        {pred.is_perfect && ' · 🎯'}
-                      </p>
+                      {pred ? (
+                        <p className="font-mono text-xs text-fg-3">
+                          My pick:{' '}
+                          {pred.prediction_type === 'result'
+                            ? pred.predicted_result === 'home'
+                              ? `${fixture.home_team_name} win`
+                              : pred.predicted_result === 'away'
+                              ? `${fixture.away_team_name} win`
+                              : 'Draw'
+                            : `${pred.predicted_home_score}–${pred.predicted_away_score}`}
+                          {pred.is_perfect && ' · 🎯'}
+                        </p>
+                      ) : (
+                        <p className="font-mono text-xs text-fg-3">No pick</p>
+                      )}
                     </div>
-                    <span className={`shrink-0 font-mono text-sm font-black ${pts > 0 ? 'text-goal' : 'text-fg-3'}`}>
-                      {pts > 0 ? `+${pts}` : '—'}
-                    </span>
+                    {pred && (
+                      <span className={`shrink-0 font-mono text-sm font-black ${(pts ?? 0) > 0 ? 'text-goal' : 'text-fg-3'}`}>
+                        {(pts ?? 0) > 0 ? `+${pts}` : pts === 0 ? '0' : '—'}
+                      </span>
+                    )}
                   </div>
                 )
               })}

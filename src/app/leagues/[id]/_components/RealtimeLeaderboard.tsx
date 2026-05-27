@@ -54,11 +54,13 @@ export function RealtimeLeaderboard({
   currentUserId,
   memberIds,
   tournamentId,
+  leagueId,
 }: {
   initial: LeaderboardEntry[]
   currentUserId: string
   memberIds: string[]
   tournamentId: string
+  leagueId: string
 }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initial)
   const [flashedUser, setFlashedUser] = useState<string | null>(null)
@@ -94,6 +96,7 @@ export function RealtimeLeaderboard({
           const { data: predictions } = await supabase
             .from('predictions')
             .select('user_id, points_earned, is_perfect, fixture_id')
+            .eq('league_id', leagueId)
             .in('user_id', memberIds)
             .in('fixture_id', fixtureIds)
 

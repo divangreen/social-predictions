@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { deleteLeague, removeMember, renameLeague, regenerateInvite, searchUsers, addMember } from '../actions'
 
 interface Member {
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Props) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<'settings' | 'members'>('settings')
   const [name, setName] = useState(leagueName)
@@ -36,8 +38,12 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
   function handleRename() {
     startTransition(async () => {
       const res = await renameLeague(leagueId, name)
-      if (res?.error) flash(res.error)
-      else flash('League renamed')
+      if (res?.error) {
+        flash(res.error)
+      } else {
+        flash('League renamed')
+        router.refresh()
+      }
     })
   }
 
@@ -45,6 +51,7 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
     startTransition(async () => {
       await regenerateInvite(leagueId)
       flash('New invite link generated')
+      router.refresh()
     })
   }
 
@@ -53,8 +60,12 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
     startTransition(async () => {
       try {
         const res = await removeMember(leagueId, userId)
-        if (res?.error) flash(res.error)
-        else flash(`${username} removed`)
+        if (res?.error) {
+          flash(res.error)
+        } else {
+          flash(`${username} removed`)
+          router.refresh()
+        }
       } catch {
         flash('Failed to remove member. Please try again.')
       }
@@ -83,11 +94,13 @@ export function AdminPanel({ leagueId, leagueName, members, currentUserId }: Pro
     startTransition(async () => {
       try {
         const res = await addMember(leagueId, userId)
-        if (res?.error) flash(res.error)
-        else {
+        if (res?.error) {
+          flash(res.error)
+        } else {
           flash(`${username} added to league`)
           setSearchQuery('')
           setSearchResults([])
+          router.refresh()
         }
       } catch {
         flash('Failed to add member. Please try again.')
