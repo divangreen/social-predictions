@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/weekly",
       "schedule": "0 9 * * 1"
-    },
-    {
-      "path": "/api/sync/live",
-      "schedule": "*/5 * * * *"
     }
   ]
 }
